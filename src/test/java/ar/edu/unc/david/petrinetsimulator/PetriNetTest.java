@@ -398,4 +398,98 @@ public class PetriNetTest {
       assertTrue(net.checkPlacesInvariant(invariant, 1));
     }
   }
+
+  @Nested
+  @DisplayName("Producer-Consumer factory model")
+  class ProducerConsumerModelTests {
+
+    @Test
+    @DisplayName("Factory creates net with expected initial marking")
+    void createProducerConsumer_hasExpectedInitialMarking() {
+      PetriNet net = PetriNet.createProducerConsumer();
+      assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
+    }
+
+    @Test
+    @DisplayName("Initial enabled transitions match expected set")
+    void createProducerConsumer_initialEnabledTransitions() {
+      PetriNet net = PetriNet.createProducerConsumer();
+
+      // Only transition 0 (produce) should be enabled at the initial marking M0.
+      assertArrayEquals(new int[] {0}, net.getEnabledTransitions());
+    }
+
+    @Test
+    @DisplayName("Manual fire sequence follows expected reachability path and returns to M0")
+    void producerConsumer_manualSequence_matchesExpectedReachability() {
+      PetriNet net = PetriNet.createProducerConsumer();
+
+      assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
+      assertArrayEquals(new int[] {0}, net.getEnabledTransitions());
+
+      net.fire(0);
+      assertArrayEquals(new int[] {1, 1, 0, 2, 0, 0, 2, 0, 0}, net.getMarking());
+      assertArrayEquals(new int[] {1}, net.getEnabledTransitions());
+
+      net.fire(1);
+      assertArrayEquals(new int[] {1, 0, 1, 2, 0, 0, 2, 1, 1}, net.getMarking());
+      assertArrayEquals(new int[] {0, 2, 3}, net.getEnabledTransitions());
+
+      net.fire(3);
+      assertArrayEquals(new int[] {1, 0, 1, 1, 1, 0, 2, 0, 0}, net.getMarking());
+      assertArrayEquals(new int[] {2, 4}, net.getEnabledTransitions());
+
+      net.fire(4);
+      assertArrayEquals(new int[] {1, 0, 1, 1, 0, 1, 3, 1, 0}, net.getMarking());
+      assertArrayEquals(new int[] {0, 2, 5}, net.getEnabledTransitions());
+
+      net.fire(5);
+      assertArrayEquals(new int[] {1, 0, 1, 2, 0, 0, 3, 1, 0}, net.getMarking());
+      assertArrayEquals(new int[] {0, 2}, net.getEnabledTransitions());
+
+      net.fire(2);
+      assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
+      assertArrayEquals(new int[] {0}, net.getEnabledTransitions());
+    }
+
+    @Test
+    @DisplayName("Disabled transition throws in producer-consumer model")
+    void producerConsumer_fireDisabledTransition_throws() {
+      PetriNet net = PetriNet.createProducerConsumer();
+
+      assertThrows(IllegalStateException.class, () -> net.fire(3));
+      assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
+    }
+
+    @Test
+    @DisplayName("Producer and consumer place invariants are preserved during sequence")
+    void producerConsumer_invariants_preservedAcrossSequence() {
+      PetriNet net = PetriNet.createProducerConsumer();
+
+      // producer cycle: p0 + p1 + p2 = 2
+      int[] producerInvariant = {1, 1, 1, 0, 0, 0, 0, 0, 0};
+      assertTrue(net.checkPlacesInvariant(producerInvariant, 2));
+
+      // consumer cycle: p3 + p4 + p5 = 2
+      int[] consumerInvariant = {0, 0, 0, 1, 1, 1, 0, 0, 0};
+      assertTrue(net.checkPlacesInvariant(consumerInvariant, 2));
+
+      // mutex invariant: p1 + p4 + p7 = 1
+      int[] mutexInvariant = {0, 1, 0, 0, 1, 0, 0, 1, 0};
+      assertTrue(net.checkPlacesInvariant(mutexInvariant, 1));
+
+      // buffer invariant: p1 + p4 + p6 + p8 = 3
+      int[] bufferInvariant = {0, 1, 0, 0, 1, 0, 1, 0, 1};
+      assertTrue(net.checkPlacesInvariant(bufferInvariant, 3));
+
+      int[] seq = {0, 1, 3, 4, 5, 2};
+      for (int t : seq) {
+        net.fire(t);
+        assertTrue(net.checkPlacesInvariant(producerInvariant, 2));
+        assertTrue(net.checkPlacesInvariant(consumerInvariant, 2));
+        assertTrue(net.checkPlacesInvariant(mutexInvariant, 1));
+        assertTrue(net.checkPlacesInvariant(bufferInvariant, 3));
+      }
+    }
+  }
 }
