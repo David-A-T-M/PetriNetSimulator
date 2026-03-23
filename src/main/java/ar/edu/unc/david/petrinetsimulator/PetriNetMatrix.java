@@ -82,4 +82,35 @@ public class PetriNetMatrix {
   public int numTransitions() {
     return numTransitions;
   }
+
+  /**
+   * Creates a PetriNetMatrix for a producer-consumer example.
+   *
+   * @return a PetriNetMatrix instance representing a producer-consumer example
+   */
+  public static PetriNetMatrix fromProducerConsumer() {
+    int[][] pre = {
+      {1, 0, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0, 0},
+      {0, 0, 1, 0, 0, 0},
+      {0, 0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0},
+      {1, 0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0, 0}
+    };
+    int[][] post = {
+      {0, 0, 1, 0, 0, 0},
+      {1, 0, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 1},
+      {0, 0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1, 0},
+      {0, 1, 0, 0, 1, 0},
+      {0, 1, 0, 0, 0, 0}
+    };
+    return new PetriNetMatrix(pre, post);
+  }
 }
