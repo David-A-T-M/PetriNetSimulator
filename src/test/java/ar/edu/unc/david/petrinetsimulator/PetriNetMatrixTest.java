@@ -3,6 +3,7 @@ package ar.edu.unc.david.petrinetsimulator;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
@@ -269,6 +270,37 @@ public class PetriNetMatrixTest {
       assertThrows(ArrayIndexOutOfBoundsException.class, () -> matrix.incidenceCol(-1));
       assertThrows(
           ArrayIndexOutOfBoundsException.class, () -> matrix.incidenceCol(matrix.numTransitions()));
+    }
+  }
+
+  @Nested
+  @DisplayName("Factory methods")
+  class FactoryMethodTests {
+
+    @Test
+    @DisplayName("fromProducerConsumer creates a non-null matrix with expected dimensions")
+    void fromProducerConsumer_returnsMatrixWithExpectedDimensions() {
+      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+
+      assertNotNull(matrix);
+      assertEquals(9, matrix.numPlaces());
+      assertEquals(6, matrix.numTransitions());
+    }
+
+    @Test
+    @DisplayName("fromProducerConsumer has expected pre column for transition 0")
+    void fromProducerConsumer_preCol0_matchesExpected() {
+      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+
+      assertArrayEquals(new int[] {1, 0, 0, 0, 0, 0, 1, 1, 0}, matrix.preCol(0));
+    }
+
+    @Test
+    @DisplayName("fromProducerConsumer has expected incidence column for transition 0")
+    void fromProducerConsumer_incidenceCol0_matchesExpected() {
+      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+
+      assertArrayEquals(new int[] {-1, 1, 0, 0, 0, 0, -1, -1, 0}, matrix.incidenceCol(0));
     }
   }
 }
