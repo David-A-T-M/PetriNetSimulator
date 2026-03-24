@@ -29,3 +29,13 @@ The logger writes:
   ```
   ^--- End of simulation: .+ ---$
   ```
+
+## Log Validation
+
+The simulation already performs log validation from Java at the end of `main` (using the built-in validator).
+
+As an additional verification option, you can also run the Python verifier script manually:
+
+```bash
+python3 verifier.py
+```
