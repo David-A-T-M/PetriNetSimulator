@@ -51,6 +51,8 @@ public class Monitor implements MonitorInterface {
 
       petriNet.fire(transition);
 
+      wakeEligible();
+
       return true;
 
     } catch (InterruptedException e) {
@@ -58,6 +60,27 @@ public class Monitor implements MonitorInterface {
       return false;
     } finally {
       lock.unlock();
+    }
+  }
+
+  private void wakeEligible() {
+    int[] enabled = petriNet.getEnabledTransitions();
+    int[] candidates = queues.getWaitingAmong(enabled);
+
+    if (candidates.length == 0) {
+      return;
+    }
+
+    int chosen = policy.decide(candidates);
+    if (chosen == -1) {
+      return;
+    }
+
+    Thread toWake = queues.dequeue(chosen);
+
+    if (toWake != null) {
+
+      condVar[chosen].signal();
     }
   }
 }
