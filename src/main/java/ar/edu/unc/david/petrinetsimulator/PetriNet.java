@@ -130,6 +130,10 @@ public class PetriNet {
     return sum == expectedConstant;
   }
 
+  public PetriNetMatrix matrix() {
+    return matrix;
+  }
+
   /**
    * Factory method to create a Petri net representing the producer-consumer problem.
    *
