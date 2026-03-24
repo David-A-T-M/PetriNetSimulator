@@ -12,21 +12,23 @@ public class Monitor implements MonitorInterface {
   private final PetriNet petriNet;
   private final WaitingQueues queues;
   private final Policy policy;
+  private final PetriLogger logger;
 
   private final ReentrantLock lock = new ReentrantLock(true);
   private final Condition[] condVar;
 
   /**
-   * Initializes the Monitor with a given Petri net and a policy for selecting transitions. The
-   * monitor sets up waiting queues for each transition and initializes condition variables to
-   * manage thread synchronization when transitions are not enabled.
+   * Initializes the Monitor with a given Petri net, policy for selecting transitions, and a logger
+   * for recording events. The monitor sets up waiting queues for each transition and initializes
+   * condition variables to manage thread synchronization when transitions are not enabled.
    *
    * @param petriNet the Petri net that the monitor will control.
    * @param policy the policy that determines which transition to fire when multiple is enabled.
    */
-  public Monitor(PetriNet petriNet, Policy policy) {
+  public Monitor(PetriNet petriNet, Policy policy, PetriLogger logger) {
     this.petriNet = petriNet;
     this.policy = policy;
+    this.logger = logger;
 
     int numTransitions = petriNet.matrix().numTransitions();
     this.queues = new WaitingQueues(numTransitions);
@@ -49,7 +51,11 @@ public class Monitor implements MonitorInterface {
         condVar[transition].await();
       }
 
+      int[] markingBefore = petriNet.getMarking().clone();
       petriNet.fire(transition);
+      int[] markingAfter = petriNet.getMarking();
+
+      logger.logFire(transition, markingBefore, markingAfter);
 
       wakeEligible();
 
