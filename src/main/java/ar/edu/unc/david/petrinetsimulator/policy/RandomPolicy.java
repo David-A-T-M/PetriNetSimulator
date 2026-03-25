@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.policy;
 
 import java.util.Objects;
 import java.util.Random;

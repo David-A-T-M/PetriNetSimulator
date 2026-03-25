@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.core;
 
 import java.util.ArrayList;
 import java.util.List;

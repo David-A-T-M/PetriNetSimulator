@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.core;
 
 /**
  * Represents a Petri net using pre and incidence matrices. The pre-matrix (W-) is stored in a

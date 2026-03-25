@@ -1,7 +1,14 @@
 package ar.edu.unc.david.petrinetsimulator;
 
-import static ar.edu.unc.david.petrinetsimulator.PetriNet.createProducerConsumer;
+import static ar.edu.unc.david.petrinetsimulator.core.PetriNet.createProducerConsumer;
 
+import ar.edu.unc.david.petrinetsimulator.agent.PetriAgent;
+import ar.edu.unc.david.petrinetsimulator.core.PetriNet;
+import ar.edu.unc.david.petrinetsimulator.log.PetriLogValidator;
+import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
+import ar.edu.unc.david.petrinetsimulator.monitor.Monitor;
+import ar.edu.unc.david.petrinetsimulator.policy.Policy;
+import ar.edu.unc.david.petrinetsimulator.policy.RandomPolicy;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;

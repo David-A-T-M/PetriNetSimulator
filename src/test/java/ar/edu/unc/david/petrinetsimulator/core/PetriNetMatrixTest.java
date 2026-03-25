@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.core;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
