@@ -1,5 +1,6 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.agent;
 
+import ar.edu.unc.david.petrinetsimulator.monitor.MonitorInterface;
 import java.util.Objects;
 
 /**

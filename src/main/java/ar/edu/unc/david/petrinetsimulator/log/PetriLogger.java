@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.log;
 
 import java.io.FileWriter;
 import java.io.IOException;

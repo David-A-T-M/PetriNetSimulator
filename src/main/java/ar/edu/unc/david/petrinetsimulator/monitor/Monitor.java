@@ -1,5 +1,8 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.monitor;
 
+import ar.edu.unc.david.petrinetsimulator.core.PetriNet;
+import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
+import ar.edu.unc.david.petrinetsimulator.policy.Policy;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 

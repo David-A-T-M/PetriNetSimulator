@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator;
+package ar.edu.unc.david.petrinetsimulator.monitor;
 
 import java.util.Arrays;
 import java.util.HashMap;
