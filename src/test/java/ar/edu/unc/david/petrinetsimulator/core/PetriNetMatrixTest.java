@@ -280,7 +280,7 @@ public class PetriNetMatrixTest {
     @Test
     @DisplayName("fromProducerConsumer creates a non-null matrix with expected dimensions")
     void fromProducerConsumer_returnsMatrixWithExpectedDimensions() {
-      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+      PetriNetMatrix matrix = PetriTestFactory.fromProducerConsumer();
 
       assertNotNull(matrix);
       assertEquals(9, matrix.numPlaces());
@@ -290,7 +290,7 @@ public class PetriNetMatrixTest {
     @Test
     @DisplayName("fromProducerConsumer has expected pre column for transition 0")
     void fromProducerConsumer_preCol0_matchesExpected() {
-      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+      PetriNetMatrix matrix = PetriTestFactory.fromProducerConsumer();
 
       assertArrayEquals(new int[] {1, 0, 0, 0, 0, 0, 1, 1, 0}, matrix.preCol(0));
     }
@@ -298,7 +298,7 @@ public class PetriNetMatrixTest {
     @Test
     @DisplayName("fromProducerConsumer has expected incidence column for transition 0")
     void fromProducerConsumer_incidenceCol0_matchesExpected() {
-      PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
+      PetriNetMatrix matrix = PetriTestFactory.fromProducerConsumer();
 
       assertArrayEquals(new int[] {-1, 1, 0, 0, 0, 0, -1, -1, 0}, matrix.incidenceCol(0));
     }

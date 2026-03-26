@@ -406,14 +406,14 @@ public class PetriNetTest {
     @Test
     @DisplayName("Factory creates net with expected initial marking")
     void createProducerConsumer_hasExpectedInitialMarking() {
-      PetriNet net = PetriNet.createProducerConsumer();
+      PetriNet net = PetriTestFactory.createProducerConsumer();
       assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
     }
 
     @Test
     @DisplayName("Initial enabled transitions match expected set")
     void createProducerConsumer_initialEnabledTransitions() {
-      PetriNet net = PetriNet.createProducerConsumer();
+      PetriNet net = PetriTestFactory.createProducerConsumer();
 
       // Only transition 0 (produce) should be enabled at the initial marking M0.
       assertArrayEquals(new int[] {0}, net.getEnabledTransitions());
@@ -422,7 +422,7 @@ public class PetriNetTest {
     @Test
     @DisplayName("Manual fire sequence follows expected reachability path and returns to M0")
     void producerConsumer_manualSequence_matchesExpectedReachability() {
-      PetriNet net = PetriNet.createProducerConsumer();
+      PetriNet net = PetriTestFactory.createProducerConsumer();
 
       assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
       assertArrayEquals(new int[] {0}, net.getEnabledTransitions());
@@ -455,7 +455,7 @@ public class PetriNetTest {
     @Test
     @DisplayName("Disabled transition throws in producer-consumer model")
     void producerConsumer_fireDisabledTransition_throws() {
-      PetriNet net = PetriNet.createProducerConsumer();
+      PetriNet net = PetriTestFactory.createProducerConsumer();
 
       assertThrows(IllegalStateException.class, () -> net.fire(3));
       assertArrayEquals(new int[] {2, 0, 0, 2, 0, 0, 3, 1, 0}, net.getMarking());
@@ -464,7 +464,7 @@ public class PetriNetTest {
     @Test
     @DisplayName("Producer and consumer place invariants are preserved during sequence")
     void producerConsumer_invariants_preservedAcrossSequence() {
-      PetriNet net = PetriNet.createProducerConsumer();
+      PetriNet net = PetriTestFactory.createProducerConsumer();
 
       // producer cycle: p0 + p1 + p2 = 2
       int[] producerInvariant = {1, 1, 1, 0, 0, 0, 0, 0, 0};
