@@ -133,19 +133,4 @@ public class PetriNet {
   public PetriNetMatrix matrix() {
     return matrix;
   }
-
-  /**
-   * Factory method to create a Petri net representing the producer-consumer problem.
-   *
-   * @return a PetriNet instance representing the producer-consumer problem with a specific initial
-   *     marking.
-   */
-  public static PetriNet createProducerConsumer() {
-    PetriNetMatrix matrix = PetriNetMatrix.fromProducerConsumer();
-
-    // P0=2 (Producers), P3=2 (Consumers), P6=3 (Buffer size), P7=1 (Mutex)
-    int[] m0 = {2, 0, 0, 2, 0, 0, 3, 1, 0};
-
-    return new PetriNet(m0, matrix);
-  }
 }

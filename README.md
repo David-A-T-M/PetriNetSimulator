@@ -39,3 +39,7 @@ As an additional verification option, you can also run the Python verifier scrip
 ```bash
 python3 verifier.py
 ```
+or
+```bash
+python3 verifier.py --config some_config_file.json --log some_log_file.txt
+```
