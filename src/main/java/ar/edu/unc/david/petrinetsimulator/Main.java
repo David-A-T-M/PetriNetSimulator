@@ -4,8 +4,10 @@ import ar.edu.unc.david.petrinetsimulator.agent.PetriAgent;
 import ar.edu.unc.david.petrinetsimulator.config.AgentConfig;
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
 import ar.edu.unc.david.petrinetsimulator.config.LoggingConfig;
+import ar.edu.unc.david.petrinetsimulator.config.NetConfig;
 import ar.edu.unc.david.petrinetsimulator.config.RuntimeConfig;
 import ar.edu.unc.david.petrinetsimulator.config.SimulationConfig;
+import ar.edu.unc.david.petrinetsimulator.config.TransitionConfig;
 import ar.edu.unc.david.petrinetsimulator.core.PetriNet;
 import ar.edu.unc.david.petrinetsimulator.core.PetriNetMatrix;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogValidator;
@@ -31,7 +33,9 @@ public class Main {
     SimulationConfig config = ConfigLoader.load(configPath);
 
     PetriNetMatrix matrix = new PetriNetMatrix(config.net().pre(), config.net().post());
-    PetriNet net = new PetriNet(config.net().initialMarking(), matrix);
+    long[] alpha = buildAlphaArray(config.net(), matrix.numTransitions());
+    long[] beta = buildBetaArray(config.net(), matrix.numTransitions());
+    PetriNet net = new PetriNet(config.net().initialMarking(), matrix, alpha, beta);
 
     LoggingConfig logging = config.logging();
     String logFile =
@@ -123,5 +127,21 @@ public class Main {
         break;
       }
     }
+  }
+
+  private static long[] buildAlphaArray(NetConfig net, int numTransitions) {
+    long[] alpha = new long[numTransitions];
+    for (TransitionConfig t : net.transitions()) {
+      alpha[t.id()] = t.alpha();
+    }
+    return alpha;
+  }
+
+  private static long[] buildBetaArray(NetConfig net, int numTransitions) {
+    long[] beta = new long[numTransitions];
+    for (TransitionConfig t : net.transitions()) {
+      beta[t.id()] = t.beta();
+    }
+    return beta;
   }
 }
