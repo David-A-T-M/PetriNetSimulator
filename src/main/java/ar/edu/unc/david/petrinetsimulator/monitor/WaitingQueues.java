@@ -56,6 +56,11 @@ public class WaitingQueues {
     threadToTransition.add(thread);
   }
 
+  public void remove(int transition, Thread thread) {
+    waitMap.get(transition).remove(thread);
+    threadToTransition.remove(thread);
+  }
+
   /** Dequeues a thread from the waiting queue of the specified transition. */
   Thread dequeue(int transition) {
     Queue<Thread> queue = waitMap.get(transition);

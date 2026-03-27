@@ -10,31 +10,38 @@ import java.util.List;
 public class PetriNet {
   private final PetriNetMatrix matrix;
   private final int[] marking;
+  private final long[] alpha;
+  private final long[] beta;
+  private final long[] sensitizationTimestamps;
 
   /**
-   * Constructs a PetriNet with the specified initial marking and PetriNetMatrix.
+   * Constructs a PetriNet with the specified initial marking marking, structure, and timing.
    *
    * @param initialMarking an array representing the initial number of tokens in each place.
    * @param matrix the PetriNetMatrix defining the structure of the Petri net.
-   * @throws NullPointerException if initialMarking or matrix is null.
-   * @throws IllegalArgumentException if the length of initialMarking does not match the number of
-   *     places defined in the matrix.
    */
-  public PetriNet(int[] initialMarking, PetriNetMatrix matrix) {
+  public PetriNet(int[] initialMarking, PetriNetMatrix matrix, long[] alpha, long[] beta) {
     java.util.Objects.requireNonNull(initialMarking, "Initial marking cannot be null");
     java.util.Objects.requireNonNull(matrix, "PetriNetMatrix cannot be null");
+    java.util.Objects.requireNonNull(alpha, "Alpha array cannot be null");
+    java.util.Objects.requireNonNull(beta, "Beta array cannot be null");
 
     if (initialMarking.length != matrix.numPlaces()) {
-      throw new IllegalArgumentException(
-          "Initial marking length ("
-              + initialMarking.length
-              + ") must match number of places ("
-              + matrix.numPlaces()
-              + ")");
+      throw new IllegalArgumentException("Initial marking length mismatch.");
+    }
+    if (alpha.length != matrix.numTransitions() || beta.length != matrix.numTransitions()) {
+      throw new IllegalArgumentException("Timing arrays must match number of transitions.");
     }
 
     this.matrix = matrix;
     this.marking = initialMarking.clone();
+    this.alpha = alpha.clone();
+    this.beta = beta.clone();
+    this.sensitizationTimestamps = new long[matrix.numTransitions()];
+
+    java.util.Arrays.fill(sensitizationTimestamps, -1);
+
+    updateSensitizationTimestamps();
   }
 
   /**
@@ -55,8 +62,7 @@ public class PetriNet {
   }
 
   /**
-   * Fires the transition with the given index, updating the marking according to the incidence
-   * matrix of the PetriNetMatrix.
+   * Fires the transition, updates marking, and refreshes sensitization timestamps.
    *
    * @param t the index of the transition to fire.
    * @throws IndexOutOfBoundsException if the transition index is out of bounds.
@@ -66,10 +72,13 @@ public class PetriNet {
     if (!isEnabled(t)) {
       throw new IllegalStateException("Transition " + t + " is not enabled");
     }
+
     int[] a = matrix.incidenceCol(t);
     for (int p = 0; p < marking.length; p++) {
       marking[p] += a[p];
     }
+
+    updateSensitizationTimestamps();
   }
 
   /**
@@ -132,5 +141,53 @@ public class PetriNet {
 
   public PetriNetMatrix matrix() {
     return matrix;
+  }
+
+  /** Checks if the transition 't' is within its timing window. */
+  public boolean isInTimeWindow(int t) {
+    long ts = sensitizationTimestamps[t];
+    if (ts == -1) {
+      return false;
+    }
+    long elapsed = System.currentTimeMillis() - ts;
+    return elapsed >= alpha[t] && elapsed <= beta[t];
+  }
+
+  /** Updates the sensitization timestamps for all transitions based on current marking. */
+  public void updateSensitizationTimestamps() {
+    long now = System.currentTimeMillis();
+    for (int t = 0; t < matrix.numTransitions(); t++) {
+      if (isEnabled(t)) {
+        if (sensitizationTimestamps[t] == -1) {
+          sensitizationTimestamps[t] = now;
+        }
+      } else {
+        sensitizationTimestamps[t] = -1;
+      }
+    }
+  }
+
+  /**
+   * Returns the remaining time in nanoseconds until transition 't' can be fired, or Long.MAX_VALUE
+   * if it is not sensitized.
+   */
+  public long nanosUntilOpen(int t) {
+    long ts = sensitizationTimestamps[t];
+    if (ts == -1) {
+      return Long.MAX_VALUE;
+    }
+    long elapsed = System.currentTimeMillis() - ts;
+    long remaining = alpha[t] - elapsed;
+    return remaining <= 0 ? 0 : remaining * 1_000_000L;
+  }
+
+  /** Checks if the transition 't' has exceeded its timing window. */
+  public boolean isExpired(int t) {
+    long ts = sensitizationTimestamps[t];
+    if (ts == -1) {
+      return false;
+    }
+    long elapsed = System.currentTimeMillis() - ts;
+    return elapsed > beta[t];
   }
 }

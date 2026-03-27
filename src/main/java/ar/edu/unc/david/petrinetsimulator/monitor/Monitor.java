@@ -3,6 +3,7 @@ package ar.edu.unc.david.petrinetsimulator.monitor;
 import ar.edu.unc.david.petrinetsimulator.core.PetriNet;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import ar.edu.unc.david.petrinetsimulator.policy.Policy;
+import java.util.Arrays;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -45,23 +46,34 @@ public class Monitor implements MonitorInterface {
   @Override
   public boolean fireTransition(int transition) {
     lock.lock();
-
     try {
-      while (!petriNet.isEnabled(transition)) {
+
+      while (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition)) {
+
+        if (petriNet.isExpired(transition)) {
+          return false;
+        }
+
         Thread current = Thread.currentThread();
         queues.enqueue(transition, current);
 
-        condVar[transition].await();
+        if (!petriNet.isEnabled(transition)) {
+          condVar[transition].await();
+        } else {
+          long waitNanos = petriNet.nanosUntilOpen(transition);
+          condVar[transition].awaitNanos(waitNanos);
+        }
+
+        queues.remove(transition, current);
       }
 
       int[] markingBefore = petriNet.getMarking().clone();
       petriNet.fire(transition);
+      petriNet.updateSensitizationTimestamps();
       int[] markingAfter = petriNet.getMarking();
 
       logger.logFire(transition, markingBefore, markingAfter);
-
       wakeEligible();
-
       return true;
 
     } catch (InterruptedException e) {
@@ -74,7 +86,10 @@ public class Monitor implements MonitorInterface {
 
   private void wakeEligible() {
     int[] enabled = petriNet.getEnabledTransitions();
-    int[] candidates = queues.getWaitingAmong(enabled);
+
+    int[] inWindow = Arrays.stream(enabled).filter(petriNet::isInTimeWindow).toArray();
+
+    int[] candidates = queues.getWaitingAmong(inWindow);
 
     if (candidates.length == 0) {
       return;
@@ -85,11 +100,7 @@ public class Monitor implements MonitorInterface {
       return;
     }
 
-    Thread toWake = queues.dequeue(chosen);
-
-    if (toWake != null) {
-
-      condVar[chosen].signal();
-    }
+    queues.dequeue(chosen);
+    condVar[chosen].signal();
   }
 }

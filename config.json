@@ -22,7 +22,15 @@
       [0, 1, 0, 0, 1, 0],
       [0, 1, 0, 0, 0, 0]
     ],
-    "initialMarking": [2, 0, 0, 2, 0, 0, 3, 1, 0]
+    "initialMarking": [2, 0, 0, 2, 0, 0, 3, 1, 0],
+    "transitions": [
+      { "id": 0, "alpha": 200, "beta": 999999 },
+      { "id": 1, "alpha": 200, "beta": 999999 },
+      { "id": 2, "alpha": 200, "beta": 999999 },
+      { "id": 3, "alpha": 200, "beta": 999999 },
+      { "id": 4, "alpha": 200, "beta": 999999 },
+      { "id": 5, "alpha": 200, "beta": 999999 }
+    ]
   },
   "placeInvariants": [
     {
@@ -47,13 +55,13 @@
       "namePrefix": "P",
       "count": 2,
       "sequence": [0, 1, 2],
-      "cycles": 1000
+      "cycles": 10
     },
     {
       "namePrefix": "C",
       "count": 2,
       "sequence": [3, 4, 5],
-      "cycles": 1000
+      "cycles": 10
     }
   ],
   "logging": {
@@ -61,7 +69,7 @@
     "logWaitWake": false
   },
   "runtime": {
-    "joinTimeoutMs": 30000,
+    "joinTimeoutMs": 40000,
     "builtInValidation": true
   },
   "policy": {
