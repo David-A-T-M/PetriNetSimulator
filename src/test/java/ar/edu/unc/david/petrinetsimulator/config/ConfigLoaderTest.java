@@ -23,7 +23,7 @@ class ConfigLoaderTest {
   void load_returnsSimulationConfig_whenJsonIsValid() throws IOException {
     Path configPath = writeFile("valid-config.json", validConfigJson());
 
-    SimulationConfig config = ConfigLoader.load(configPath.toString());
+    SimulationConfig config = ConfigLoader.load(configPath.toString(), SimulationConfig.class);
 
     assertNotNull(config);
     assertNotNull(config.net());
@@ -47,7 +47,8 @@ class ConfigLoaderTest {
     String missingPath = tempDir.resolve("missing.json").toString();
 
     RuntimeException ex =
-        assertThrows(RuntimeException.class, () -> ConfigLoader.load(missingPath));
+        assertThrows(
+            RuntimeException.class, () -> ConfigLoader.load(missingPath, SimulationConfig.class));
 
     assertTrue(ex.getMessage().contains("Failed to load configuration from"));
     assertNotNull(ex.getCause());
@@ -61,7 +62,9 @@ class ConfigLoaderTest {
     Path configPath = writeFile("malformed.json", "{ this is not valid json ");
 
     RuntimeException ex =
-        assertThrows(RuntimeException.class, () -> ConfigLoader.load(configPath.toString()));
+        assertThrows(
+            RuntimeException.class,
+            () -> ConfigLoader.load(configPath.toString(), SimulationConfig.class));
 
     assertTrue(ex.getMessage().contains("Failed to load configuration from"));
     assertNotNull(ex.getCause());
@@ -77,7 +80,9 @@ class ConfigLoaderTest {
             "invalid-business-config.json", validConfigJson().replace("\"RANDOM\"", "\"FIFO\""));
 
     RuntimeException ex =
-        assertThrows(RuntimeException.class, () -> ConfigLoader.load(configPath.toString()));
+        assertThrows(
+            RuntimeException.class,
+            () -> ConfigLoader.load(configPath.toString(), SimulationConfig.class));
 
     assertTrue(ex.getMessage().contains("Failed to load configuration from"));
     assertNotNull(ex.getCause());
@@ -88,7 +93,9 @@ class ConfigLoaderTest {
   @DisplayName("load throws RuntimeException when path points to a directory")
   void load_throwsRuntimeException_whenPathIsDirectory() {
     RuntimeException ex =
-        assertThrows(RuntimeException.class, () -> ConfigLoader.load(tempDir.toString()));
+        assertThrows(
+            RuntimeException.class,
+            () -> ConfigLoader.load(tempDir.toString(), SimulationConfig.class));
 
     assertTrue(ex.getMessage().contains("Failed to load configuration from"));
     assertNotNull(ex.getCause());
@@ -98,7 +105,7 @@ class ConfigLoaderTest {
   @Test
   @DisplayName("load throws NullPointerException when path is null")
   void load_throwsNullPointerException_whenPathIsNull() {
-    assertThrows(NullPointerException.class, () -> ConfigLoader.load(null));
+    assertThrows(NullPointerException.class, () -> ConfigLoader.load(null, SimulationConfig.class));
   }
 
   private Path writeFile(String fileName, String content) throws IOException {

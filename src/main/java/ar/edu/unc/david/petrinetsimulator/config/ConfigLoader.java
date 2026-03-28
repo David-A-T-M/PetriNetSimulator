@@ -13,22 +13,24 @@ public class ConfigLoader {
    * Loads the simulation configuration from the specified JSON file path.
    *
    * @param path the file path to the JSON configuration file
-   * @return the loaded SimulationConfig object
+   * @param valueType the class type of the configuration object to be loaded
+   * @return the loaded configuration object of the specified type
    * @throws RuntimeException if there is an error reading or parsing the configuration file
    * @throws NullPointerException if the path is null
    * @throws SecurityException if there are security restrictions preventing file access
    */
-  public static SimulationConfig load(String path) {
+  public static <T> T load(String path, Class<T> valueType) {
     try {
       File configFile = new File(path);
       if (!configFile.exists()) {
         throw new IOException("File not found: " + path);
       }
 
-      return mapper.readValue(configFile, SimulationConfig.class);
+      return mapper.readValue(configFile, valueType);
 
     } catch (IOException e) {
-      throw new RuntimeException("Failed to load configuration from " + path, e);
+      throw new RuntimeException(
+          "Failed to load " + valueType.getSimpleName() + " from " + path, e);
     }
   }
 }
