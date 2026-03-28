@@ -1,0 +1,21 @@
+{
+  "places": [
+    { "id": 0, "label": "P0: Idle", "x": 100, "y": 100 },
+    { "id": 1, "label": "P1: Prod", "x": 100, "y": 250 },
+    { "id": 2, "label": "P2: Done", "x": 100, "y": 400 },
+    { "id": 3, "label": "P3: Idle", "x": 500, "y": 100 },
+    { "id": 4, "label": "P4: Cons", "x": 500, "y": 250 },
+    { "id": 5, "label": "P5: Done", "x": 500, "y": 400 },
+    { "id": 6, "label": "P6: Empty", "x": 300, "y": 150 },
+    { "id": 7, "label": "P7: Mutex", "x": 300, "y": 250 },
+    { "id": 8, "label": "P8: Items", "x": 300, "y": 350 }
+  ],
+  "transitions": [
+    { "id": 0, "label": "T0", "x": 100, "y": 175 },
+    { "id": 1, "label": "T1", "x": 100, "y": 325 },
+    { "id": 2, "label": "T2", "x": 40,  "y": 250 },
+    { "id": 3, "label": "T3", "x": 500, "y": 175 },
+    { "id": 4, "label": "T4", "x": 500, "y": 325 },
+    { "id": 5, "label": "T5", "x": 560, "y": 250 }
+  ]
+}
