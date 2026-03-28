@@ -4,6 +4,7 @@ plugins {
     id("checkstyle")
     id("com.diffplug.spotless") version "6.25.0"
     id("jacoco")
+    id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 application {
@@ -21,6 +22,11 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+javafx {
+    version = "21.0.2"
+    modules = listOf("javafx.controls", "javafx.fxml")
 }
 
 dependencies {
