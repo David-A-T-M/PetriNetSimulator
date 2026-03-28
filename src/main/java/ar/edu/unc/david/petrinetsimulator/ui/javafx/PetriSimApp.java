@@ -52,7 +52,7 @@ public class PetriSimApp extends Application {
 
     PetriCanvas canvas = buildCanvas(config.net(), layout);
     canvas.setTopology(config.net().pre(), config.net().post()); // <- agregar
-    canvas.updateUI(new PetriEvent(-1, null, config.net().initialMarking().clone(), 0));
+    canvas.updateUi(new PetriEvent(-1, null, config.net().initialMarking().clone(), 0));
 
     relay = new SimulationRelay(queue, canvas);
     relay.start();

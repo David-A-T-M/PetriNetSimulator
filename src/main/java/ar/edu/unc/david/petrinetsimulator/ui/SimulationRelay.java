@@ -24,7 +24,7 @@ public class SimulationRelay extends Service<Void> {
         while (!isCancelled()) {
           PetriEvent event = queue.take();
 
-          Platform.runLater(() -> canvas.updateUI(event));
+          Platform.runLater(() -> canvas.updateUi(event));
         }
         return null;
       }
