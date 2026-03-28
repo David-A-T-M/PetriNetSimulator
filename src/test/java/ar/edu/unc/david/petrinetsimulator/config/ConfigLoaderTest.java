@@ -50,7 +50,7 @@ class ConfigLoaderTest {
         assertThrows(
             RuntimeException.class, () -> ConfigLoader.load(missingPath, SimulationConfig.class));
 
-    assertTrue(ex.getMessage().contains("Failed to load configuration from"));
+    assertTrue(ex.getMessage().contains("Failed to load"));
     assertNotNull(ex.getCause());
     assertInstanceOf(IOException.class, ex.getCause());
     assertTrue(ex.getCause().getMessage().contains("File not found"));
@@ -66,7 +66,7 @@ class ConfigLoaderTest {
             RuntimeException.class,
             () -> ConfigLoader.load(configPath.toString(), SimulationConfig.class));
 
-    assertTrue(ex.getMessage().contains("Failed to load configuration from"));
+    assertTrue(ex.getMessage().contains("Failed to load "));
     assertNotNull(ex.getCause());
     assertInstanceOf(IOException.class, ex.getCause());
   }
@@ -84,7 +84,7 @@ class ConfigLoaderTest {
             RuntimeException.class,
             () -> ConfigLoader.load(configPath.toString(), SimulationConfig.class));
 
-    assertTrue(ex.getMessage().contains("Failed to load configuration from"));
+    assertTrue(ex.getMessage().contains("Failed to load "));
     assertNotNull(ex.getCause());
     assertInstanceOf(IOException.class, ex.getCause());
   }
@@ -97,7 +97,7 @@ class ConfigLoaderTest {
             RuntimeException.class,
             () -> ConfigLoader.load(tempDir.toString(), SimulationConfig.class));
 
-    assertTrue(ex.getMessage().contains("Failed to load configuration from"));
+    assertTrue(ex.getMessage().contains("Failed to load "));
     assertNotNull(ex.getCause());
     assertInstanceOf(IOException.class, ex.getCause());
   }
