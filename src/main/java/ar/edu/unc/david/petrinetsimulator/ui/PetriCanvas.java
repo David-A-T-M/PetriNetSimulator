@@ -1,19 +1,23 @@
 package ar.edu.unc.david.petrinetsimulator.ui;
 
+import ar.edu.unc.david.petrinetsimulator.config.layout.ArcLayoutConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.WaypointConfig;
 import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
-import ar.edu.unc.david.petrinetsimulator.ui.nodes.NodeView;
 import ar.edu.unc.david.petrinetsimulator.ui.nodes.PlaceView;
 import ar.edu.unc.david.petrinetsimulator.ui.nodes.TransitionView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.animation.Interpolator;
 import javafx.animation.ParallelTransition;
-import javafx.animation.TranslateTransition;
+import javafx.animation.PathTransition;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
 import javafx.util.Duration;
 
 /**
@@ -25,6 +29,7 @@ public class PetriCanvas extends Pane {
   private final Map<Integer, TransitionView> transitionMap = new HashMap<>();
   private int[][] pre;
   private int[][] post;
+  private Map<String, Path> paths = new HashMap<>();
 
   public PetriCanvas() {
     this.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #cccccc;");
@@ -49,27 +54,36 @@ public class PetriCanvas extends Pane {
     this.getChildren().add(tv);
   }
 
-  /**
-   * Adds an arc between a place and a transition. The direction is determined by isPlaceToTrans.
-   */
-  public void addArc(int fromId, int toId, boolean isPlaceToTrans) {
-    NodeView source = isPlaceToTrans ? placeMap.get(fromId) : transitionMap.get(fromId);
-    NodeView target = isPlaceToTrans ? transitionMap.get(toId) : placeMap.get(toId);
-
-    if (source == null || target == null) {
+  /** Adds arcs to the canvas based on the given list of ArcLayoutConfig. */
+  public void addArcs(List<ArcLayoutConfig> arcs) {
+    if (arcs == null || arcs.isEmpty()) {
       return;
     }
 
-    double startX = source.centerX();
-    double startY = source.centerY();
-    double endX = target.centerX();
-    double endY = target.centerY();
+    for (ArcLayoutConfig arc : arcs) {
+      if (arc == null || arc.waypoints() == null || arc.waypoints().size() < 2) {
+        continue;
+      }
 
-    Line line = new Line(startX, startY, endX, endY);
-    line.setStroke(Color.web("#606060"));
-    line.setStrokeWidth(1.5);
+      Path path = new Path();
+      List<WaypointConfig> points = arc.waypoints();
 
-    this.getChildren().addFirst(line);
+      WaypointConfig first = points.getFirst();
+      path.getElements().add(new MoveTo(first.x(), first.y()));
+
+      for (int i = 1; i < points.size(); i++) {
+        WaypointConfig wp = points.get(i);
+        path.getElements().add(new LineTo(wp.x(), wp.y()));
+      }
+
+      path.setStroke(Color.web("#606060"));
+      path.setStrokeWidth(1.5);
+      path.setFill(null);
+
+      paths.put(arc.arc(), path);
+
+      this.getChildren().addFirst(path);
+    }
   }
 
   /**
@@ -136,24 +150,25 @@ public class PetriCanvas extends Pane {
 
   private ParallelTransition animate(List<PlaceView> places, TransitionView tv, boolean isIn) {
     ParallelTransition parallel = new ParallelTransition();
+
     for (PlaceView place : places) {
-      double startX = isIn ? place.centerX() : tv.centerX();
-      double startY = isIn ? place.centerY() : tv.centerY();
+      String key = isIn ? (place.label() + "-" + tv.label()) : (tv.label() + "-" + place.label());
 
-      Circle token = makeToken();
-      token.setCenterX(startX);
-      token.setCenterY(startY);
-      this.getChildren().add(token);
+      Path road = paths.get(key);
 
-      double endX = isIn ? tv.centerX() : place.centerX();
-      double endY = isIn ? tv.centerY() : place.centerY();
+      if (road != null) {
+        Circle token = makeToken();
+        this.getChildren().add(token);
 
-      TranslateTransition tt = new TranslateTransition(Duration.millis(400), token);
-      tt.setToX(endX - startX);
-      tt.setToY(endY - startY);
-      tt.setOnFinished(e -> this.getChildren().remove(token));
+        PathTransition pt = new PathTransition(Duration.millis(600), road, token);
+        pt.setInterpolator(Interpolator.EASE_IN);
 
-      parallel.getChildren().add(tt);
+        pt.setOnFinished(e -> this.getChildren().remove(token));
+
+        parallel.getChildren().add(pt);
+      } else {
+        System.err.println("Advertencia: No se encontró el Path para la clave: " + key);
+      }
     }
     return parallel;
   }

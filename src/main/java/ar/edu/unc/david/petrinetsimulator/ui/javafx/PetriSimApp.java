@@ -1,11 +1,10 @@
 package ar.edu.unc.david.petrinetsimulator.ui.javafx;
 
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
-import ar.edu.unc.david.petrinetsimulator.config.LayoutConfig;
-import ar.edu.unc.david.petrinetsimulator.config.NetConfig;
-import ar.edu.unc.david.petrinetsimulator.config.PlaceLayout;
 import ar.edu.unc.david.petrinetsimulator.config.SimulationConfig;
-import ar.edu.unc.david.petrinetsimulator.config.TransitionLayout;
+import ar.edu.unc.david.petrinetsimulator.config.layout.LayoutConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.PlaceLayout;
+import ar.edu.unc.david.petrinetsimulator.config.layout.TransitionLayout;
 import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine.Components;
@@ -50,7 +49,7 @@ public class PetriSimApp extends Application {
         new UiAwarePetriLogger(
             SimulatorEngine.resolveLogFile(config.logging()), new QueuedNotifier(queue));
 
-    PetriCanvas canvas = buildCanvas(config.net(), layout);
+    PetriCanvas canvas = buildCanvas(layout);
     canvas.setTopology(config.net().pre(), config.net().post()); // <- agregar
     canvas.updateUi(new PetriEvent(-1, null, config.net().initialMarking().clone(), 0));
 
@@ -89,7 +88,7 @@ public class PetriSimApp extends Application {
     }
   }
 
-  private PetriCanvas buildCanvas(NetConfig net, LayoutConfig layout) {
+  private PetriCanvas buildCanvas(LayoutConfig layout) {
     PetriCanvas canvas = new PetriCanvas();
 
     for (PlaceLayout p : layout.places()) {
@@ -100,19 +99,7 @@ public class PetriSimApp extends Application {
       canvas.addTransition(t.id(), t.label(), t.x(), t.y());
     }
 
-    int[][] pre = net.pre();
-    int[][] post = net.post();
-
-    for (int p = 0; p < pre.length; p++) {
-      for (int t = 0; t < pre[p].length; t++) {
-        if (pre[p][t] > 0) {
-          canvas.addArc(p, t, true); // Place -> Transition
-        }
-        if (post[p][t] > 0) {
-          canvas.addArc(t, p, false); // Transition -> Place
-        }
-      }
-    }
+    canvas.addArcs(layout.arcs());
 
     return canvas;
   }
