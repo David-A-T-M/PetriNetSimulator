@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,7 @@ class ConfigLoaderTest {
   @Test
   @DisplayName("load returns SimulationConfig when JSON file is valid")
   void load_returnsSimulationConfig_whenJsonIsValid() throws IOException {
-    Path configPath = writeFile("valid-config.json", validConfigJson());
+    Path configPath = writeFile("valid-prod_cons_logic.json", validConfigJson());
 
     SimulationConfig config = ConfigLoader.load(configPath.toString(), SimulationConfig.class);
 
@@ -77,7 +78,8 @@ class ConfigLoaderTest {
     // JSON sintacticamente valido, pero policy.type no soportado segun PolicyConfig.
     Path configPath =
         writeFile(
-            "invalid-business-config.json", validConfigJson().replace("\"RANDOM\"", "\"FIFO\""));
+            "invalid-business-prod_cons_logic.json",
+            validConfigJson().replace("\"RANDOM\"", "\"FIFO\""));
 
     RuntimeException ex =
         assertThrows(

@@ -1,12 +1,12 @@
 package ar.edu.unc.david.petrinetsimulator.core;
 
 import ar.edu.unc.david.petrinetsimulator.agent.PetriAgent;
-import ar.edu.unc.david.petrinetsimulator.config.AgentConfig;
-import ar.edu.unc.david.petrinetsimulator.config.LoggingConfig;
-import ar.edu.unc.david.petrinetsimulator.config.NetConfig;
-import ar.edu.unc.david.petrinetsimulator.config.RuntimeConfig;
-import ar.edu.unc.david.petrinetsimulator.config.SimulationConfig;
-import ar.edu.unc.david.petrinetsimulator.config.TransitionConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.AgentConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.LoggingConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.NetConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogValidator;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import ar.edu.unc.david.petrinetsimulator.monitor.Monitor;

@@ -11,13 +11,11 @@ import javafx.scene.text.Text;
 public class PlaceView extends StackPane implements NodeView {
   private static final double PLACE_RADIUS = 25.0;
   private static final double TOKEN_RADIUS = 3.0;
-  private final int id;
   private final String label;
   private final FlowPane tokenContainer;
 
   /** Creates a PlaceView with the given id, label, and position. */
-  public PlaceView(int id, String label, double x, double y) {
-    this.id = id;
+  public PlaceView(String label, double x, double y) {
     this.label = label;
 
     Circle circle = new Circle(PLACE_RADIUS, Color.WHITE);

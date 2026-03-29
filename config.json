@@ -1,78 +1,29 @@
 {
-  "net": {
-    "pre": [
-      [1, 0, 0, 0, 0, 0],
-      [0, 1, 0, 0, 0, 0],
-      [0, 0, 1, 0, 0, 0],
-      [0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 1, 0],
-      [0, 0, 0, 0, 0, 1],
-      [1, 0, 0, 0, 0, 0],
-      [1, 0, 0, 1, 0, 0],
-      [0, 0, 0, 1, 0, 0]
-    ],
-    "post": [
-      [0, 0, 1, 0, 0, 0],
-      [1, 0, 0, 0, 0, 0],
-      [0, 1, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 1],
-      [0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 1, 0],
-      [0, 0, 0, 0, 1, 0],
-      [0, 1, 0, 0, 1, 0],
-      [0, 1, 0, 0, 0, 0]
-    ],
-    "initialMarking": [2, 0, 0, 2, 0, 0, 3, 1, 0],
-    "transitions": [
-      { "id": 0, "alpha": 2000, "beta": 999999 },
-      { "id": 1, "alpha": 2000, "beta": 999999 },
-      { "id": 2, "alpha": 2000, "beta": 999999 },
-      { "id": 3, "alpha": 2000, "beta": 999999 },
-      { "id": 4, "alpha": 2000, "beta": 999999 },
-      { "id": 5, "alpha": 2000, "beta": 999999 }
-    ]
-  },
-  "placeInvariants": [
+  "activeNetworkId": "prod_cons",
+  "networks": [
     {
-      "places": [1, 1, 1, 0, 0, 0, 0, 0, 0],
-      "constant": 2
+      "id": "prod_cons",
+      "name": "Producer-Consumer",
+      "logicPath": "src/main/resources/prod_cons_logic.json",
+      "layoutPath": "src/main/resources/prod_cons_layout.json"
     },
     {
-      "places": [0, 0, 0, 1, 1, 1, 0, 0, 0],
-      "constant": 2
+      "id": "reserve_sys",
+      "name": "Reservation System",
+      "logicPath": "src/main/resources/res_alloc_logic.json",
+      "layoutPath": "src/main/resources/res_alloc_layout.json"
     },
     {
-      "places": [0, 1, 0, 0, 1, 0, 0, 1, 0],
-      "constant": 1
+      "id": "dining_phil",
+      "name": "Dining Philosophers",
+      "logicPath": "src/main/resources/dining_phil_logic.json",
+      "layoutPath": "src/main/resources/dining_phil_layout.json"
     },
     {
-      "places": [0, 1, 0, 0, 1, 0, 1, 0, 1],
-      "constant": 3
+      "id": "data_proc",
+      "name": "Data Processing",
+      "logicPath": "src/main/resources/data_proc_logic.json",
+      "layoutPath": "src/main/resources/data_proc_layout.json"
     }
-  ],
-  "agents": [
-    {
-      "namePrefix": "P",
-      "count": 2,
-      "sequence": [0, 1, 2],
-      "cycles": 10
-    },
-    {
-      "namePrefix": "C",
-      "count": 2,
-      "sequence": [3, 4, 5],
-      "cycles": 10
-    }
-  ],
-  "logging": {
-    "file": "petri_log.csv",
-    "logWaitWake": false
-  },
-  "runtime": {
-    "joinTimeoutMs": 40000,
-    "builtInValidation": true
-  },
-  "policy": {
-    "type": "RANDOM"
-  }
+  ]
 }
