@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator.config;
+package ar.edu.unc.david.petrinetsimulator.config.logic;
 
 import java.util.List;
 

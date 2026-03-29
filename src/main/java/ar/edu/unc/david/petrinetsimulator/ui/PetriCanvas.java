@@ -29,7 +29,7 @@ public class PetriCanvas extends Pane {
   private final Map<Integer, TransitionView> transitionMap = new HashMap<>();
   private int[][] pre;
   private int[][] post;
-  private Map<String, Path> paths = new HashMap<>();
+  private final Map<String, Path> paths = new HashMap<>();
 
   public PetriCanvas() {
     this.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #cccccc;");
@@ -37,7 +37,7 @@ public class PetriCanvas extends Pane {
 
   /** Adds a place to the canvas with the given id, label, and position. */
   public void addPlace(int id, String label, double x, double y) {
-    PlaceView pv = new PlaceView(id, label, x, y);
+    PlaceView pv = new PlaceView(label, x, y);
     placeMap.put(id, pv);
     this.getChildren().add(pv);
   }
@@ -49,7 +49,7 @@ public class PetriCanvas extends Pane {
 
   /** Adds a transition to the canvas with the given id, label, and position. */
   public void addTransition(int id, String label, double x, double y) {
-    TransitionView tv = new TransitionView(id, label, x, y);
+    TransitionView tv = new TransitionView(label, x, y);
     transitionMap.put(id, tv);
     this.getChildren().add(tv);
   }
@@ -167,7 +167,7 @@ public class PetriCanvas extends Pane {
 
         parallel.getChildren().add(pt);
       } else {
-        System.err.println("Advertencia: No se encontró el Path para la clave: " + key);
+        System.err.println("No path found for " + key);
       }
     }
     return parallel;

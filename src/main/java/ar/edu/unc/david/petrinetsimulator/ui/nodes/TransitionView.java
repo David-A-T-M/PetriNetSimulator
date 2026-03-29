@@ -11,13 +11,11 @@ import javafx.util.Duration;
 public class TransitionView extends StackPane implements NodeView {
   private static final double W = 50.0;
   private static final double H = 20.0;
-  private final int id;
   private final String label;
   private final Rectangle rect;
 
   /** Creates a TransitionView with the given id, label, and position. */
-  public TransitionView(int id, String label, double x, double y) {
-    this.id = id;
+  public TransitionView(String label, double x, double y) {
     this.label = label;
 
     this.rect = new Rectangle(W, H, Color.DARKSLATEGRAY);

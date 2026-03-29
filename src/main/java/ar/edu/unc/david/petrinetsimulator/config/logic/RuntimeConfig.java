@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator.config;
+package ar.edu.unc.david.petrinetsimulator.config.logic;
 
 /** Runtime configuration for the Petri net simulation. */
 public record RuntimeConfig(int joinTimeoutMs, boolean builtInValidation) {

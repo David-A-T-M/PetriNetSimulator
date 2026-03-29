@@ -8,6 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.unc.david.petrinetsimulator.config.logic.AgentConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.LoggingConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.NetConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.PlaceInvariantConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.PolicyConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

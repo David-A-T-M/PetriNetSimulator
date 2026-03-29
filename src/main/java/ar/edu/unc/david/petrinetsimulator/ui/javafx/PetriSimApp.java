@@ -1,10 +1,12 @@
 package ar.edu.unc.david.petrinetsimulator.ui.javafx;
 
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
-import ar.edu.unc.david.petrinetsimulator.config.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.layout.LayoutConfig;
 import ar.edu.unc.david.petrinetsimulator.config.layout.PlaceLayout;
 import ar.edu.unc.david.petrinetsimulator.config.layout.TransitionLayout;
+import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
+import ar.edu.unc.david.petrinetsimulator.config.main.MainConfig;
+import ar.edu.unc.david.petrinetsimulator.config.main.NetworkEntry;
 import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine.Components;
@@ -22,9 +24,6 @@ import javafx.stage.Stage;
 
 /** JavaFX entry point: wires the simulation engine to the visual canvas. */
 public class PetriSimApp extends Application {
-
-  private static final String DEFAULT_CONFIG_FILE = "config.json";
-
   private static final double PLACE_START_X = 60;
   private static final double PLACE_SPACING = 90;
   private static final double TRANSITION_START_X = 80;
@@ -38,9 +37,18 @@ public class PetriSimApp extends Application {
 
   @Override
   public void start(Stage stage) {
-    List<String> rawArgs = getParameters().getRaw();
-    String configPath = rawArgs.isEmpty() ? DEFAULT_CONFIG_FILE : rawArgs.getFirst();
-    LayoutConfig layout = ConfigLoader.load("src/main/resources/layout.json", LayoutConfig.class);
+    MainConfig mainConfig = ConfigLoader.load("config.json", MainConfig.class);
+
+    NetworkEntry network =
+        mainConfig.networks().stream()
+            .filter(n -> n.id().equals(mainConfig.activeNetworkId()))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Active network not found in config"));
+
+    String configPath = network.logicPath();
+    String layoutPath = network.layoutPath();
+
+    LayoutConfig layout = ConfigLoader.load(layoutPath, LayoutConfig.class);
 
     SimulationConfig config = ConfigLoader.load(configPath, SimulationConfig.class);
 
@@ -50,7 +58,7 @@ public class PetriSimApp extends Application {
             SimulatorEngine.resolveLogFile(config.logging()), new QueuedNotifier(queue));
 
     PetriCanvas canvas = buildCanvas(layout);
-    canvas.setTopology(config.net().pre(), config.net().post()); // <- agregar
+    canvas.setTopology(config.net().pre(), config.net().post());
     canvas.updateUi(new PetriEvent(-1, null, config.net().initialMarking().clone(), 0));
 
     relay = new SimulationRelay(queue, canvas);

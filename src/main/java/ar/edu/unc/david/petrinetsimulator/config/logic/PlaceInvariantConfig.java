@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator.config;
+package ar.edu.unc.david.petrinetsimulator.config.logic;
 
 /** Configuration for a place invariant in the Petri net. */
 public record PlaceInvariantConfig(int[] places, int constant) {

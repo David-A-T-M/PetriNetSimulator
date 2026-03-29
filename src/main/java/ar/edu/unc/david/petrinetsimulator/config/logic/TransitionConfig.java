@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator.config;
+package ar.edu.unc.david.petrinetsimulator.config.logic;
 
 /** Configuration for a single transition's timing. */
 public record TransitionConfig(int id, long alpha, long beta) {

@@ -1,6 +1,6 @@
 package ar.edu.unc.david.petrinetsimulator.core;
 
-import ar.edu.unc.david.petrinetsimulator.config.TransitionConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
 import java.util.Arrays;
 import java.util.List;
 

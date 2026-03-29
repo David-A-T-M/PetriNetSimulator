@@ -1,4 +1,4 @@
-package ar.edu.unc.david.petrinetsimulator.config;
+package ar.edu.unc.david.petrinetsimulator.config.logic;
 
 /** Configuration for the policy used in the Petri net simulation. */
 public record PolicyConfig(String type) {
