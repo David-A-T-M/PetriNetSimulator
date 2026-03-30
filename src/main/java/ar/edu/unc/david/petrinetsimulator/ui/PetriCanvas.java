@@ -160,7 +160,7 @@ public class PetriCanvas extends Pane {
         Circle token = makeToken();
         this.getChildren().add(token);
 
-        PathTransition pt = new PathTransition(Duration.millis(600), road, token);
+        PathTransition pt = new PathTransition(Duration.millis(100), road, token);
         pt.setInterpolator(Interpolator.EASE_IN);
 
         pt.setOnFinished(e -> this.getChildren().remove(token));
