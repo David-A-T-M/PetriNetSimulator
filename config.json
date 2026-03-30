@@ -1,5 +1,5 @@
 {
-  "activeNetworkId": "prod_cons",
+  "activeNetworkId": "data_proc",
   "networks": [
     {
       "id": "prod_cons",
@@ -10,14 +10,8 @@
     {
       "id": "reserve_sys",
       "name": "Reservation System",
-      "logicPath": "src/main/resources/res_alloc_logic.json",
-      "layoutPath": "src/main/resources/res_alloc_layout.json"
-    },
-    {
-      "id": "dining_phil",
-      "name": "Dining Philosophers",
-      "logicPath": "src/main/resources/dining_phil_logic.json",
-      "layoutPath": "src/main/resources/dining_phil_layout.json"
+      "logicPath": "src/main/resources/reserve_sys_logic.json",
+      "layoutPath": "src/main/resources/reserve_sys_layout.json"
     },
     {
       "id": "data_proc",
