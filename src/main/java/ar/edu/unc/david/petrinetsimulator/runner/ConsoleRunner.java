@@ -3,6 +3,7 @@ package ar.edu.unc.david.petrinetsimulator.runner;
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.main.MainConfig;
+import ar.edu.unc.david.petrinetsimulator.config.main.NetworkEntry;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import java.util.List;
@@ -13,12 +14,15 @@ public class ConsoleRunner {
   public static void main(String[] args) {
     MainConfig mainConfig = ConfigLoader.load("config.json", MainConfig.class);
 
-    String configPath =
+    NetworkEntry net =
         mainConfig.networks().stream()
             .filter(n -> n.id().equals(mainConfig.activeNetworkId()))
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Active network not found in config"))
-            .logicPath();
+            .orElseThrow(() -> new RuntimeException("Active network not found in config"));
+
+    System.out.println("Starting simulation with active network: " + net.name());
+
+    String configPath = net.logicPath();
 
     SimulationConfig config = ConfigLoader.load(configPath, SimulationConfig.class);
 

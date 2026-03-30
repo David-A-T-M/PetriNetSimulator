@@ -9,8 +9,8 @@ import javafx.util.Duration;
 
 /** * Visual representation of a Petri net transition. Displays a rectangle with a label. */
 public class TransitionView extends StackPane implements NodeView {
-  private static final double W = 50.0;
-  private static final double H = 20.0;
+  private static double W;
+  private static double H;
   private final String label;
   private final Rectangle rect;
 
@@ -23,10 +23,18 @@ public class TransitionView extends StackPane implements NodeView {
     this.rect.setArcHeight(5);
 
     Text text = new Text(label);
+    if (W < H) {
+      text.setTranslateX(20);
+    }
     text.setTranslateY(-20);
 
     this.getChildren().addAll(rect, text);
     this.setCenter(x, y);
+  }
+
+  public static void setTransSize(double width, double height) {
+    W = width;
+    H = height;
   }
 
   /** Flashes the transition to indicate it has fired. */

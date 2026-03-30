@@ -4,4 +4,8 @@ import java.util.List;
 
 /** Configuration for the layout of the Petri net visualization. */
 public record LayoutConfig(
-    List<PlaceLayout> places, List<TransitionLayout> transitions, List<ArcLayoutConfig> arcs) {}
+    List<PlaceLayout> places,
+    double transW,
+    double transH,
+    List<TransitionLayout> transitions,
+    List<ArcLayoutConfig> arcs) {}

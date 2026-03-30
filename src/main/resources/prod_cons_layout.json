@@ -10,6 +10,8 @@
     { "id": 7, "label": "P7", "x": 300, "y": 250 },
     { "id": 8, "label": "P8", "x": 300, "y": 350 }
   ],
+  "transW": 50,
+  "transH": 20,
   "transitions": [
     { "id": 0, "label": "T0", "x": 100, "y": 175 },
     { "id": 1, "label": "T1", "x": 100, "y": 325 },

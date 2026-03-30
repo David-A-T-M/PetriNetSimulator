@@ -14,6 +14,7 @@ import ar.edu.unc.david.petrinetsimulator.log.UiAwarePetriLogger;
 import ar.edu.unc.david.petrinetsimulator.ui.PetriCanvas;
 import ar.edu.unc.david.petrinetsimulator.ui.QueuedNotifier;
 import ar.edu.unc.david.petrinetsimulator.ui.SimulationRelay;
+import ar.edu.unc.david.petrinetsimulator.ui.nodes.TransitionView;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,9 +49,12 @@ public class PetriSimApp extends Application {
     String configPath = network.logicPath();
     String layoutPath = network.layoutPath();
 
+    System.out.println("Starting simulation with active network: " + network.name());
+
     LayoutConfig layout = ConfigLoader.load(layoutPath, LayoutConfig.class);
 
     SimulationConfig config = ConfigLoader.load(configPath, SimulationConfig.class);
+    TransitionView.setTransSize(layout.transW(), layout.transH());
 
     BlockingQueue<PetriEvent> queue = new LinkedBlockingQueue<>();
     logger =
