@@ -141,7 +141,7 @@ class ConfigRecordsTest {
     @Test
     @DisplayName("accepts valid agent config")
     void acceptsValidAgentConfig() {
-      AgentConfig config = new AgentConfig("P", 2, new int[] {0, 1, 2}, 100);
+      AgentConfig config = new AgentConfig("P", 2, new int[] {0, 1, 2}, 100, null);
 
       assertEquals("P", config.namePrefix());
       assertEquals(2, config.count());
@@ -152,53 +152,53 @@ class ConfigRecordsTest {
     @Test
     @DisplayName("rejects count == 0")
     void rejectsCountZero() {
-      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 0, new int[] {0}, 1));
+      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 0, new int[] {0}, 1, null));
     }
 
     @Test
     @DisplayName("rejects count < 0")
     void rejectsCountNegative() {
       assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", -1, new int[] {0}, 1));
+          IllegalArgumentException.class, () -> new AgentConfig("P", -1, new int[] {0}, 1, null));
     }
 
     @Test
     @DisplayName("rejects cycles == 0")
     void rejectsCyclesZero() {
-      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, 0));
+      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, 0, null));
     }
 
     @Test
     @DisplayName("rejects cycles < 0")
     void rejectsCyclesNegative() {
       assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, -5));
+          IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, -5, null));
     }
 
     @Test
     @DisplayName("rejects null namePrefix")
     void rejectsNullNamePrefix() {
       assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig(null, 1, new int[] {0, 1}, 10));
+          IllegalArgumentException.class, () -> new AgentConfig(null, 1, new int[] {0, 1}, 10, null));
     }
 
     @Test
     @DisplayName("rejects blank namePrefix")
     void rejectsBlankNamePrefix() {
       assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("   ", 1, new int[] {0, 1}, 10));
+          IllegalArgumentException.class, () -> new AgentConfig("   ", 1, new int[] {0, 1}, 10, null));
     }
 
     @Test
     @DisplayName("rejects null sequence")
     void rejectsNullSequence() {
-      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, null, 10));
+      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, null, 10, null));
     }
 
     @Test
     @DisplayName("rejects empty sequence")
     void rejectsEmptySequence() {
-      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {}, 10));
+      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {}, 10, null));
     }
   }
 
@@ -496,7 +496,7 @@ class ConfigRecordsTest {
                   new int[] {1, 0},
                   List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L))),
               List.of(new PlaceInvariantConfig(new int[] {1, 1}, 1)),
-              List.of(new AgentConfig("P", 1, new int[] {0}, 1)),
+              List.of(new AgentConfig("P", 1, new int[] {0}, 1, null)),
               new LoggingConfig("petri_log.csv", false),
               new RuntimeConfig(10_000, true),
               new PolicyConfig("RANDOM"));

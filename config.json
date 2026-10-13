@@ -1,5 +1,5 @@
 {
-  "activeNetworkId": "data_proc",
+  "activeNetworkId": "reserve_sys",
   "networks": [
     {
       "id": "prod_cons",

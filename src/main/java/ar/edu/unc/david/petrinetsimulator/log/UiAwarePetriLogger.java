@@ -1,7 +1,8 @@
 package ar.edu.unc.david.petrinetsimulator.log;
 
-import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
-import ar.edu.unc.david.petrinetsimulator.core.PetriNotifier;
+import ar.edu.unc.david.petrinetsimulator.notify.FiringEvent;
+import ar.edu.unc.david.petrinetsimulator.notify.PetriNotifier;
+import ar.edu.unc.david.petrinetsimulator.notify.ThreadEvent;
 
 /** Extends PetriLogger to also notify a UI about transition firings. */
 public class UiAwarePetriLogger extends PetriLogger {
@@ -17,6 +18,16 @@ public class UiAwarePetriLogger extends PetriLogger {
     super.logFire(transition, before, after);
 
     notifier.notify(
-        new PetriEvent(transition, before.clone(), after.clone(), System.currentTimeMillis()));
+        new FiringEvent(
+            transition,
+            Thread.currentThread().getName(),
+            before.clone(),
+            after.clone(),
+            System.currentTimeMillis()));
+  }
+
+  @Override
+  public synchronized void logWait(int t) {
+    notifier.notify(new ThreadEvent(t, Thread.currentThread().getName()));
   }
 }

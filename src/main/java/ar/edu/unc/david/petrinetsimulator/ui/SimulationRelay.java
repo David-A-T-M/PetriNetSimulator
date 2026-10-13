@@ -1,6 +1,6 @@
 package ar.edu.unc.david.petrinetsimulator.ui;
 
-import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
+import ar.edu.unc.david.petrinetsimulator.notify.PetriEvent;
 import java.util.concurrent.BlockingQueue;
 import javafx.application.Platform;
 import javafx.concurrent.Service;

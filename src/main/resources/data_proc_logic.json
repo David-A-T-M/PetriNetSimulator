@@ -30,18 +30,18 @@
     ],
     "initialMarking": [3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
     "transitions": [
-      { "id": 0, "alpha": 1000, "beta": 999999 },
-      { "id": 1, "alpha": 1000, "beta": 999999 },
-      { "id": 2, "alpha": 1000, "beta": 999999 },
-      { "id": 3, "alpha": 1000, "beta": 999999 },
-      { "id": 4, "alpha": 1000, "beta": 999999 },
-      { "id": 5, "alpha": 1000, "beta": 999999 },
-      { "id": 6, "alpha": 1000, "beta": 999999 },
-      { "id": 7, "alpha": 1000, "beta": 999999 },
-      { "id": 8, "alpha": 1000, "beta": 999999 },
-      { "id": 9, "alpha": 1000, "beta": 999999 },
-      { "id": 10, "alpha": 1000, "beta": 999999 },
-      { "id": 11, "alpha": 1000, "beta": 999999 }
+      { "id": 0, "alpha": 500, "beta": 999999 },
+      { "id": 1, "alpha": 500, "beta": 999999 },
+      { "id": 2, "alpha": 500, "beta": 999999 },
+      { "id": 3, "alpha": 500, "beta": 999999 },
+      { "id": 4, "alpha": 500, "beta": 999999 },
+      { "id": 5, "alpha": 500, "beta": 999999 },
+      { "id": 6, "alpha": 500, "beta": 999999 },
+      { "id": 7, "alpha": 500, "beta": 999999 },
+      { "id": 8, "alpha": 500, "beta": 999999 },
+      { "id": 9, "alpha": 500, "beta": 999999 },
+      { "id": 10, "alpha": 500, "beta": 999999 },
+      { "id": 11, "alpha": 500, "beta": 999999 }
     ]
   },
   "placeInvariants": [
@@ -60,22 +60,39 @@
   ],
   "agents": [
     {
+      "namePrefix": "S",
+      "count": 3,
+      "sequence": [0, 1],
+      "cycles": 50,
+      "color": "BLACK"
+    },
+    {
+      "namePrefix": "E",
+      "count": 3,
+      "sequence": [11],
+      "cycles": 50,
+      "color": "PURPLE"
+    },
+    {
       "namePrefix": "M",
-      "count": 2,
-      "sequence": [0, 1, 2, 3, 4, 11],
-      "cycles": 50
+      "count": 4,
+      "sequence": [2, 3, 4],
+      "cycles": 50,
+      "color": "BLUE"
     },
     {
       "namePrefix": "L",
-      "count": 2,
-      "sequence": [0, 1, 5, 6, 11],
-      "cycles": 50
+      "count": 1,
+      "sequence": [5, 6],
+      "cycles": 50,
+      "color": "GREEN"
     },
     {
       "namePrefix": "H",
-      "count": 2,
-      "sequence": [0, 1, 7, 8, 9, 10, 11],
-      "cycles": 50
+      "count": 1,
+      "sequence": [7, 8, 9, 10],
+      "cycles": 50,
+      "color": "RED"
     }
   ],
   "logging": {

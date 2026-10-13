@@ -8,4 +8,6 @@ public record LayoutConfig(
     double transW,
     double transH,
     List<TransitionLayout> transitions,
-    List<ArcLayoutConfig> arcs) {}
+    List<ArcLayoutConfig> tokenPaths,
+    List<ThreadPathConfig> threadPaths,
+    List<SequenceConfig> sequences) {}

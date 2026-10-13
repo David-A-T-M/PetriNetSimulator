@@ -1,7 +1,5 @@
-package ar.edu.unc.david.petrinetsimulator.ui;
+package ar.edu.unc.david.petrinetsimulator.notify;
 
-import ar.edu.unc.david.petrinetsimulator.core.PetriEvent;
-import ar.edu.unc.david.petrinetsimulator.core.PetriNotifier;
 import java.util.concurrent.BlockingQueue;
 
 /**

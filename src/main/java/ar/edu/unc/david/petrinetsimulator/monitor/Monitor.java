@@ -56,6 +56,7 @@ public class Monitor implements MonitorInterface {
 
         Thread current = Thread.currentThread();
         queues.enqueue(transition, current);
+        logger.logWait(transition);
 
         if (!petriNet.isEnabled(transition)) {
           condVar[transition].await();

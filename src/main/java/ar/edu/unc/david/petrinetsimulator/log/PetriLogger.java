@@ -55,6 +55,8 @@ public class PetriLogger {
         current.getName(), transition, Arrays.toString(marking));
   }
 
+  public void logWait(int t) {}
+
   /** Logs when a thread is woken up to fire a transition. */
   public synchronized void logWake(Thread toWake, int chosen, int[] marking) {
     System.out.printf(
