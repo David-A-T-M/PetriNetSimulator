@@ -49,6 +49,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("skipped", "failed", "standardOut", "standardError")
+    }
 }
 
 checkstyle {

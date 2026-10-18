@@ -1,7 +1,5 @@
 package ar.edu.unc.david.petrinetsimulator.config.logic;
 
-import javafx.scene.paint.Color;
-
 /** Configuration for an agent in the Petri net simulation. */
 public record AgentConfig(String namePrefix, int count, int[] sequence, int cycles, String color) {
   /** Validates the agent configuration. */

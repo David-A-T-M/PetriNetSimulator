@@ -1,7 +1,6 @@
 package ar.edu.unc.david.petrinetsimulator.ui.nodes;
 
 import javafx.animation.PauseTransition;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
@@ -96,7 +95,14 @@ public class TransitionView extends StackPane implements NodeView {
   }
 
   public enum ThreadAnchor {
-    TOP, TOP_RIGHT, TOP_LEFT, BOTTOM, BOTTOM_RIGHT, BOTTOM_LEFT, LEFT, RIGHT;
+    TOP,
+    TOP_RIGHT,
+    TOP_LEFT,
+    BOTTOM,
+    BOTTOM_RIGHT,
+    BOTTOM_LEFT,
+    LEFT,
+    RIGHT;
 
     public void apply(Region container) {
       switch (this) {

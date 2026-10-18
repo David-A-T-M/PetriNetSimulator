@@ -3,9 +3,7 @@ package ar.edu.unc.david.petrinetsimulator.ui.monitor;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.control.Separator;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -28,8 +26,8 @@ public class MonitorView extends HBox {
     this.setStyle("-fx-background-color: transparent; -fx-border-radius: 8;");
     this.setAlignment(Pos.TOP_LEFT);
 
-    //HBox activeBox = new HBox(4);
-    //activeBox.setAlignment(Pos.TOP_CENTER);
+    // HBox activeBox = new HBox(4);
+    // activeBox.setAlignment(Pos.TOP_CENTER);
     Text c0Label = new Text("Monitor");
     c0Label.setFill(Color.WHITE);
     c0Label.setStyle("-fx-font-weight: bold;");
@@ -41,12 +39,12 @@ public class MonitorView extends HBox {
     c0Box.setArcHeight(6);
     c0Box.setStroke(Color.LIGHTGRAY);
     c0Box.setStrokeWidth(1.5);
-    //activeBox.getChildren().addAll(c0Label, c0Box, activeThreadLabel);
-    //this.getChildren().add(activeBox);
+    // activeBox.getChildren().addAll(c0Label, c0Box, activeThreadLabel);
+    // this.getChildren().add(activeBox);
 
     // separador visual
-    //Separator sep = new Separator(Orientation.VERTICAL);
-    //this.getChildren().add(sep);
+    // Separator sep = new Separator(Orientation.VERTICAL);
+    // this.getChildren().add(sep);
 
     // slots por transición
     for (int t = 0; t < numTransitions; t++) {

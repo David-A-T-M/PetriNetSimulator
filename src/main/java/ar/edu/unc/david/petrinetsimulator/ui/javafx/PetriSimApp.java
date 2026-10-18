@@ -2,7 +2,6 @@ package ar.edu.unc.david.petrinetsimulator.ui.javafx;
 
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
 import ar.edu.unc.david.petrinetsimulator.config.layout.LayoutConfig;
-import ar.edu.unc.david.petrinetsimulator.config.layout.PathConfig;
 import ar.edu.unc.david.petrinetsimulator.config.layout.PlaceLayout;
 import ar.edu.unc.david.petrinetsimulator.config.layout.TransitionLayout;
 import ar.edu.unc.david.petrinetsimulator.config.logic.AgentConfig;
@@ -17,10 +16,7 @@ import ar.edu.unc.david.petrinetsimulator.notify.PetriEvent;
 import ar.edu.unc.david.petrinetsimulator.notify.QueuedNotifier;
 import ar.edu.unc.david.petrinetsimulator.ui.PetriCanvas;
 import ar.edu.unc.david.petrinetsimulator.ui.SimulationRelay;
-import ar.edu.unc.david.petrinetsimulator.ui.monitor.MonitorView;
 import ar.edu.unc.david.petrinetsimulator.ui.nodes.TransitionView;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +25,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
@@ -76,8 +71,8 @@ public class PetriSimApp extends Application {
     canvas.setTransitionMap(layout.sequences());
     canvas.updateUi(new FiringEvent(-1, null, null, config.net().initialMarking().clone(), 0));
 
-//    MonitorView monitorView = new MonitorView(config.net().transitions().size());
-//    monitorView.setPrefHeight(160);
+    //    MonitorView monitorView = new MonitorView(config.net().transitions().size());
+    //    monitorView.setPrefHeight(160);
 
     relay = new SimulationRelay(queue, canvas);
     relay.start();

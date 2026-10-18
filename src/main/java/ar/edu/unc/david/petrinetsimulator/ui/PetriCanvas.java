@@ -1,6 +1,10 @@
 package ar.edu.unc.david.petrinetsimulator.ui;
 
-import ar.edu.unc.david.petrinetsimulator.config.layout.*;
+import ar.edu.unc.david.petrinetsimulator.config.layout.ArcLayoutConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.PathConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.SequenceConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.ThreadPathConfig;
+import ar.edu.unc.david.petrinetsimulator.config.layout.WaypointConfig;
 import ar.edu.unc.david.petrinetsimulator.notify.FiringEvent;
 import ar.edu.unc.david.petrinetsimulator.notify.PetriEvent;
 import ar.edu.unc.david.petrinetsimulator.notify.ThreadEvent;
@@ -21,8 +25,6 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.util.Duration;
-
-import javax.sound.midi.Sequence;
 
 /**
  * A JavaFX Pane that visualizes a Petri net. It manages PlaceView and TransitionView nodes, and
@@ -75,7 +77,8 @@ public class PetriCanvas extends Pane {
   }
 
   /** Adds a transition to the canvas with the given id, label, and position. */
-  public void addTransition(int id, String label, double x, double y, String threadAnchor, int numThreads, Color color) {
+  public void addTransition(
+      int id, String label, double x, double y, String threadAnchor, int numThreads, Color color) {
     TransitionView tv = new TransitionView(label, x, y, threadAnchor);
     transitionMap.put(id, tv);
     tv.updateMarking(numThreads, color);
@@ -104,13 +107,11 @@ public class PetriCanvas extends Pane {
         path.getElements().add(new LineTo(wp.x(), wp.y()));
       }
 
-
       path.setStroke(Color.BLACK);
       tokenPaths.put(arc.arc(), path);
 
       path.setStrokeWidth(1.5);
       path.setFill(null);
-
 
       this.getChildren().addFirst(path);
     }
@@ -143,7 +144,6 @@ public class PetriCanvas extends Pane {
       path.setStrokeWidth(1.5);
       path.setFill(null);
 
-
       this.getChildren().addFirst(path);
     }
   }
@@ -171,7 +171,11 @@ public class PetriCanvas extends Pane {
     int t = event.transitionId();
     TransitionView tv = transitionMap.get(t);
 
-    if (tv == null || pre == null || post == null || event.markingBefore() == null || event.threadId() == null) {
+    if (tv == null
+        || pre == null
+        || post == null
+        || event.markingBefore() == null
+        || event.threadId() == null) {
       applyMarking(event.newMarking());
       return;
     }
@@ -186,7 +190,8 @@ public class PetriCanvas extends Pane {
     Circle token = new Circle(2, color);
     token.setMouseTransparent(true);
     this.getChildren().add(token);
-    PathTransition threadAnimation = new PathTransition(Duration.millis(300), threadPaths.get(key), token);
+    PathTransition threadAnimation =
+        new PathTransition(Duration.millis(300), threadPaths.get(key), token);
     threadAnimation.setInterpolator(Interpolator.EASE_IN);
     threadAnimation.setOnFinished(e -> this.getChildren().remove(token));
 

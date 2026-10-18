@@ -50,7 +50,8 @@ public class TransitionSlot extends VBox {
   }
 
   public void addThread(String threadId) {
-    boolean exists = queueBox.getChildren().stream()
+    boolean exists =
+        queueBox.getChildren().stream()
             .filter(node -> node instanceof Text)
             .map(node -> (Text) node)
             .anyMatch(textNode -> textNode.getText().equals(threadId));
@@ -61,14 +62,17 @@ public class TransitionSlot extends VBox {
   }
 
   public void removeSpecificThread(String threadId) {
-    queueBox.getChildren().removeIf(node -> {
-      // 1. Verificamos que el nodo sea de tipo Text
-      if (node instanceof Text textNode) {
-        // 2. Comparamos el contenido del texto
-        return textNode.getText().equals(threadId);
-      }
-      return false;
-    });
+    queueBox
+        .getChildren()
+        .removeIf(
+            node -> {
+              // 1. Verificamos que el nodo sea de tipo Text
+              if (node instanceof Text textNode) {
+                // 2. Comparamos el contenido del texto
+                return textNode.getText().equals(threadId);
+              }
+              return false;
+            });
   }
 
   /** lista de nombres de hilos en cola */
