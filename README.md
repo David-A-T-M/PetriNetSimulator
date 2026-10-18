@@ -15,7 +15,6 @@ A configurable **Petri net simulator** in Java, focused on concurrent execution 
 - [Regex Patterns](#regex-patterns)
 - [Testing and Quality](#testing-and-quality)
 - [Known Limitations](#known-limitations)
-- [Roadmap Ideas](#roadmap-ideas)
 
 ## Overview
 
@@ -235,6 +234,19 @@ Auto-format Java code:
 ```
 
 Reports are generated under `build/reports/`.
+
+## Validation artifacts
+
+The repository includes PIPE exports in `docs/` that can be used to validate the structural definition of the packaged
+networks against their JSON counterparts in `src/main/resources/`.
+
+Current validation checks cover:
+
+- `pre` and `post` matrices.
+- the initial marking.
+- the place and transition counts implied by the export
+
+This validation is structural only. It does not execute the simulator.
 
 ## Known Limitations
 
