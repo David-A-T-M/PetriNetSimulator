@@ -15,6 +15,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.PlaceInvariantConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.PolicyConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.StopConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -171,10 +172,11 @@ class ConfigRecordsTest {
     }
 
     @Test
-    @DisplayName("rejects cycles < 0")
-    void rejectsCyclesNegative() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, -5, null));
+    @DisplayName("accepts negative cycles for infinite mode")
+    void acceptsNegativeCyclesForInfiniteMode() {
+      AgentConfig config = new AgentConfig("P", 1, new int[] {0}, -1, null);
+
+      assertEquals(-1, config.cycles());
     }
 
     @Test
@@ -204,6 +206,31 @@ class ConfigRecordsTest {
     void rejectsEmptySequence() {
       assertThrows(
           IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {}, 10, null));
+    }
+  }
+
+  @Nested
+  @DisplayName("StopConfig")
+  class StopConfigTests {
+
+    @Test
+    @DisplayName("accepts valid stop configuration")
+    void acceptsValidStopConfiguration() {
+      StopConfig config = new StopConfig(11, 200);
+      assertEquals(11, config.transition());
+      assertEquals(200, config.count());
+    }
+
+    @Test
+    @DisplayName("rejects negative transition")
+    void rejectsNegativeTransition() {
+      assertThrows(IllegalArgumentException.class, () -> new StopConfig(-1, 200));
+    }
+
+    @Test
+    @DisplayName("rejects zero count")
+    void rejectsZeroCount() {
+      assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 0));
     }
   }
 
@@ -504,7 +531,8 @@ class ConfigRecordsTest {
               List.of(new AgentConfig("P", 1, new int[] {0}, 1, null)),
               new LoggingConfig("petri_log.csv", false),
               new RuntimeConfig(10_000, true),
-              new PolicyConfig("RANDOM"));
+              new PolicyConfig("RANDOM"),
+              new StopConfig(11, 200));
 
       assertEquals(2, config.net().pre().length);
       assertEquals(1, config.placeInvariants().size());
@@ -512,12 +540,14 @@ class ConfigRecordsTest {
       assertEquals("petri_log.csv", config.logging().file());
       assertEquals(10_000, config.runtime().joinTimeoutMs());
       assertEquals("RANDOM", config.policy().type());
+      assertEquals(11, config.stop().transition());
+      assertEquals(200, config.stop().count());
     }
 
     @Test
     @DisplayName("current behavior: allows null sections")
     void allowsNullSectionsCurrently() {
-      SimulationConfig config = new SimulationConfig(null, null, null, null, null, null);
+      SimulationConfig config = new SimulationConfig(null, null, null, null, null, null, null);
 
       assertNull(config.net());
       assertNull(config.placeInvariants());
@@ -525,6 +555,7 @@ class ConfigRecordsTest {
       assertNull(config.logging());
       assertNull(config.runtime());
       assertNull(config.policy());
+      assertNull(config.stop());
     }
   }
 }

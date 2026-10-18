@@ -27,7 +27,8 @@ public class PetriAgent implements Runnable {
       throw new IllegalArgumentException("sequence cannot be empty");
     }
     if (cycles == 0) {
-      throw new IllegalArgumentException("cycles must be > 0 for finite mode, or < 0 for infinite");
+      throw new IllegalArgumentException(
+          "cycles cannot be zero; use a positive value for finite mode or a negative value for infinite mode");
     }
     this.sequence = sequence.clone();
     this.cycles = cycles;

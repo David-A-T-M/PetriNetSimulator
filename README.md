@@ -244,9 +244,14 @@ Current validation checks cover:
 
 - `pre` and `post` matrices.
 - the initial marking.
-- the place and transition counts implied by the export
+- the place and transition counts implied by the export.
+- the optional global stop configuration used by the packaged networks.
+- open-ended agent execution via negative cycle counts.
 
 This validation is structural only. It does not execute the simulator.
+
+The packaged JSON network files also include the runtime stop configuration used by the console runner, so a configured
+network can end after the expected number of completion events instead of depending only on per-agent cycle limits.
 
 ## Known Limitations
 

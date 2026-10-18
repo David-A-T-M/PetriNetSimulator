@@ -9,4 +9,5 @@ public record SimulationConfig(
     List<AgentConfig> agents,
     LoggingConfig logging,
     RuntimeConfig runtime,
-    PolicyConfig policy) {}
+    PolicyConfig policy,
+    StopConfig stop) {}

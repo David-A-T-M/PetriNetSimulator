@@ -17,9 +17,11 @@ public class Monitor implements MonitorInterface {
   private final WaitingQueues queues;
   private final Policy policy;
   private final PetriLogger logger;
+  private final StopCondition stopCondition;
 
   private final ReentrantLock lock = new ReentrantLock(true);
   private final Condition[] condVar;
+  private boolean finished;
 
   /**
    * Initializes the Monitor with a given Petri net, policy for selecting transitions, and a logger
@@ -28,11 +30,26 @@ public class Monitor implements MonitorInterface {
    *
    * @param petriNet the Petri net that the monitor will control.
    * @param policy the policy that determines which transition to fire when multiple is enabled.
+   * @param logger the logger used to record waiting and firing events.
    */
   public Monitor(PetriNet petriNet, Policy policy, PetriLogger logger) {
+    this(petriNet, policy, logger, null);
+  }
+
+  /**
+   * Initializes the Monitor with a given Petri net, policy, logger, and optional stop condition.
+   *
+   * @param petriNet the Petri net that the monitor will control.
+   * @param policy the policy that determines which transition to fire when multiple is enabled.
+   * @param logger the logger used to record waiting and firing events.
+   * @param stopCondition the global stop condition, or null if the run should not stop early.
+   */
+  public Monitor(
+      PetriNet petriNet, Policy policy, PetriLogger logger, StopCondition stopCondition) {
     this.petriNet = petriNet;
     this.policy = policy;
     this.logger = logger;
+    this.stopCondition = stopCondition;
 
     int numTransitions = petriNet.matrix().numTransitions();
     this.queues = new WaitingQueues(numTransitions);
@@ -47,8 +64,12 @@ public class Monitor implements MonitorInterface {
   public boolean fireTransition(int transition) {
     lock.lock();
     try {
+      if (finished) {
+        return false;
+      }
 
-      while (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition)) {
+      while (!finished
+          && (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition))) {
 
         if (petriNet.isExpired(transition)) {
           return false;
@@ -66,6 +87,13 @@ public class Monitor implements MonitorInterface {
         }
 
         queues.remove(transition, current);
+        if (finished) {
+          return false;
+        }
+      }
+
+      if (finished) {
+        return false;
       }
 
       int[] markingBefore = petriNet.getMarking().clone();
@@ -74,6 +102,13 @@ public class Monitor implements MonitorInterface {
       int[] markingAfter = petriNet.getMarking();
 
       logger.logFire(transition, markingBefore, markingAfter);
+
+      if (stopCondition != null && stopCondition.recordFire(transition)) {
+        finished = true;
+        signalAllWaitingThreads();
+        return false;
+      }
+
       wakeEligible();
       return true;
 
@@ -86,6 +121,10 @@ public class Monitor implements MonitorInterface {
   }
 
   private void wakeEligible() {
+    if (finished) {
+      return;
+    }
+
     int[] enabled = petriNet.getEnabledTransitions();
 
     int[] inWindow = Arrays.stream(enabled).filter(petriNet::isInTimeWindow).toArray();
@@ -103,5 +142,11 @@ public class Monitor implements MonitorInterface {
 
     queues.dequeue(chosen);
     condVar[chosen].signal();
+  }
+
+  private void signalAllWaitingThreads() {
+    for (Condition condition : condVar) {
+      condition.signalAll();
+    }
   }
 }

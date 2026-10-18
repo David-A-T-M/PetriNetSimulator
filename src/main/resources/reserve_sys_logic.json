@@ -81,42 +81,42 @@
       "namePrefix": "S",
       "count": 2,
       "sequence": [0, 1],
-      "cycles": 500,
+      "cycles": -1,
       "color": "BLACK"
     },
     {
       "namePrefix": "E",
       "count": 2,
       "sequence": [11],
-      "cycles": 500,
+      "cycles": -1,
       "color": "PURPLE"
     },
     {
       "namePrefix": "T",
       "count": 2,
       "sequence": [2, 5],
-      "cycles": 500,
+      "cycles": -1,
       "color": "GREEN"
     },
     {
       "namePrefix": "B",
       "count": 2,
       "sequence": [3, 4],
-      "cycles": 500,
+      "cycles": -1,
       "color": "ORANGE"
     },
     {
       "namePrefix": "X",
       "count": 2,
       "sequence": [6, 9, 10],
-      "cycles": 500,
+      "cycles": -1,
       "color": "RED"
     },
     {
       "namePrefix": "Y",
       "count": 2,
       "sequence": [7, 8],
-      "cycles": 500,
+      "cycles": -1,
       "color": "BLUE"
     }
   ],
@@ -130,5 +130,9 @@
   },
   "policy": {
     "type": "RANDOM"
+  },
+  "stop": {
+    "transition": 11,
+    "count": 186
   }
 }

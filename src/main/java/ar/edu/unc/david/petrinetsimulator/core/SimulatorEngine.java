@@ -10,6 +10,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogValidator;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import ar.edu.unc.david.petrinetsimulator.monitor.Monitor;
+import ar.edu.unc.david.petrinetsimulator.monitor.StopCondition;
 import ar.edu.unc.david.petrinetsimulator.policy.Policy;
 import ar.edu.unc.david.petrinetsimulator.policy.PolicyFactory;
 import java.nio.file.Path;
@@ -36,7 +37,11 @@ public class SimulatorEngine {
     PetriNet petriNet = new PetriNet(net.initialMarking(), matrix, alpha, beta);
 
     Policy policy = PolicyFactory.create(config.policy().type());
-    Monitor monitor = new Monitor(petriNet, policy, logger);
+    StopCondition stopCondition =
+        config.stop() == null
+            ? null
+            : new StopCondition(config.stop().transition(), config.stop().count());
+    Monitor monitor = new Monitor(petriNet, policy, logger, stopCondition);
 
     return new Components(
         petriNet, monitor, config.agents(), config.runtime(), resolveLogFile(config.logging()));

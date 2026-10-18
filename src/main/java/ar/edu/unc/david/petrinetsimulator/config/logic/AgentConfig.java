@@ -7,8 +7,9 @@ public record AgentConfig(String namePrefix, int count, int[] sequence, int cycl
     if (count <= 0) {
       throw new IllegalArgumentException("The number of agents must be positive.");
     }
-    if (cycles <= 0) {
-      throw new IllegalArgumentException("The number of cycles must be positive.");
+    if (cycles == 0) {
+      throw new IllegalArgumentException(
+          "The number of cycles cannot be zero; use a positive value for finite mode or a negative value for infinite mode.");
     }
     if (namePrefix == null || namePrefix.isBlank()) {
       throw new IllegalArgumentException(

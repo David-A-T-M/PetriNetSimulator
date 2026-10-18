@@ -3,6 +3,7 @@ package ar.edu.unc.david.petrinetsimulator.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,6 +41,26 @@ class ConfigLoaderTest {
     assertEquals("RANDOM", config.policy().type());
     assertEquals(5000, config.runtime().joinTimeoutMs());
     assertTrue(config.runtime().builtInValidation());
+    assertNull(config.stop());
+  }
+
+  @Test
+  @DisplayName("load reads packaged network configs including stop conditions")
+  void load_readsPackagedNetworkConfigsIncludingStopConditions() {
+    SimulationConfig reserveSys =
+        ConfigLoader.load("src/main/resources/reserve_sys_logic.json", SimulationConfig.class);
+    SimulationConfig dataProc =
+        ConfigLoader.load("src/main/resources/data_proc_logic.json", SimulationConfig.class);
+
+    assertNotNull(reserveSys.stop());
+    assertNotNull(dataProc.stop());
+    assertEquals(11, reserveSys.stop().transition());
+    assertEquals(186, reserveSys.stop().count());
+    assertEquals(11, dataProc.stop().transition());
+    assertEquals(200, dataProc.stop().count());
+
+    reserveSys.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
+    dataProc.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
   }
 
   @Test
