@@ -64,53 +64,79 @@ public class Monitor implements MonitorInterface {
   public boolean fireTransition(int transition) {
     lock.lock();
     try {
-      if (finished) {
-        return false;
-      }
-
-      while (!finished
-          && (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition))) {
-
-        if (petriNet.isExpired(transition)) {
-          return false;
-        }
-
-        Thread current = Thread.currentThread();
-        queues.enqueue(transition, current);
-        logger.logWait(transition);
-
-        if (!petriNet.isEnabled(transition)) {
-          condVar[transition].await();
-        } else {
-          long waitNanos = petriNet.nanosUntilOpen(transition);
-          condVar[transition].awaitNanos(waitNanos);
-        }
-
-        queues.remove(transition, current);
+      for (; ; ) {
         if (finished) {
           return false;
         }
+
+        while (!finished
+            && (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition))) {
+
+          if (petriNet.isExpired(transition)) {
+            return false;
+          }
+
+          Thread current = Thread.currentThread();
+          queues.enqueue(transition, current);
+          logger.logWait(transition);
+
+          if (!petriNet.isEnabled(transition)) {
+            condVar[transition].await();
+          } else {
+            long waitNanos = petriNet.nanosUntilOpen(transition);
+            condVar[transition].awaitNanos(waitNanos);
+          }
+
+          queues.remove(transition, current);
+
+          if (finished) {
+            return false;
+          }
+        }
+
+        if (finished) {
+          return false;
+        }
+
+        int[] candidates = collectCandidates(transition);
+        int chosen = policy.decide(candidates);
+
+        if (chosen != transition) {
+          Thread current = Thread.currentThread();
+          queues.enqueue(transition, current);
+          logger.logWait(transition);
+
+          if (queues.hasWaiting(chosen)) {
+            queues.dequeue(chosen);
+            condVar[chosen].signal();
+          }
+
+          condVar[transition].await();
+          queues.remove(transition, current);
+
+          if (finished) {
+            return false;
+          }
+
+          continue;
+        }
+
+        int[] markingBefore = petriNet.getMarking().clone();
+        petriNet.fire(transition);
+        petriNet.updateSensitizationTimestamps();
+        int[] markingAfter = petriNet.getMarking();
+
+        logger.logFire(transition, markingBefore, markingAfter);
+
+        if (stopCondition != null && stopCondition.recordFire(transition)) {
+          finished = true;
+          signalAllWaitingThreads();
+          return false;
+        }
+
+        wakeEligible();
+        return true;
       }
-
-      if (finished) {
-        return false;
-      }
-
-      int[] markingBefore = petriNet.getMarking().clone();
-      petriNet.fire(transition);
-      petriNet.updateSensitizationTimestamps();
-      int[] markingAfter = petriNet.getMarking();
-
-      logger.logFire(transition, markingBefore, markingAfter);
-
-      if (stopCondition != null && stopCondition.recordFire(transition)) {
-        finished = true;
-        signalAllWaitingThreads();
-        return false;
-      }
-
-      wakeEligible();
-      return true;
 
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -142,6 +168,24 @@ public class Monitor implements MonitorInterface {
 
     queues.dequeue(chosen);
     condVar[chosen].signal();
+  }
+
+  private int[] collectCandidates(int transition) {
+    int[] enabled = petriNet.getEnabledTransitions();
+    int[] inWindow = Arrays.stream(enabled).filter(petriNet::isInTimeWindow).toArray();
+    int[] waiting = queues.getWaitingAmong(inWindow);
+
+    int[] candidates = new int[waiting.length + 1];
+    candidates[0] = transition;
+
+    int size = 1;
+    for (int candidate : waiting) {
+      if (candidate != transition) {
+        candidates[size++] = candidate;
+      }
+    }
+
+    return size == candidates.length ? candidates : Arrays.copyOf(candidates, size);
   }
 
   private void signalAllWaitingThreads() {

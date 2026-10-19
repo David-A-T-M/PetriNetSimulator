@@ -34,6 +34,7 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
 - Generic net definition (not tied to producer-consumer hardcoding)
 - Transition timing support (`alpha`, `beta`)
 - Concurrent agents with per-agent transition sequences and cycle counts
+- Policy-driven transition selection with `RANDOM` and `PROPORTION` modes
 - Built-in Java log structure validator (`PetriLogValidator`)
 - External Python verifier for semantic checks (`verifier.py`)
 - Quality gates: JUnit 5, Checkstyle, Spotless, JaCoCo
@@ -61,6 +62,7 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/Policy.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/PolicyFactory.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/RandomPolicy.java`
+  - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/ProportionPolicy.java`
 - Logging:
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/log/PetriLogger.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/log/PetriLogPatterns.java`
@@ -157,10 +159,19 @@ The simulator is configured via the `SimulationConfig` records. Example:
     "builtInValidation": true
   },
   "policy": {
-    "type": "RANDOM"
+    "type": "PROPORTION",
+    "groups": [
+      {
+        "transitions": [2, 5, 7],
+        "weights": [1, 1, 1]
+      }
+    ]
   }
 }
 ```
+
+For simple runs, `policy.type` can still be `RANDOM` with an empty or omitted `groups` array. For proportional run, each
+group declares the transitions that compete with one another and the weights assigned to each transition.
 
 ## Logging and Validation
 
@@ -253,9 +264,13 @@ This validation is structural only. It does not execute the simulator.
 The packaged JSON network files also include the runtime stop configuration used by the console runner, so a configured
 network can end after the expected number of completion events instead of depending only on per-agent cycle limits.
 
+Policy behavior is covered by unit tests for `ProportionPolicy` and by monitor integration tests that exercise policy
+selection while threads are waiting.
+
 ## Known Limitations
 
-- `policy.type` currently supports only `RANDOM`.
+- The policy groups are still declared manually in the network JSON files; the monitor does not infer them automatically
+  from the matrices.
 - Built-in Java validation checks log structure; deeper semantic validation is handled by `verifier.py`.
 - Timing behavior depends on scheduling and monitor contention in concurrent runs.
 

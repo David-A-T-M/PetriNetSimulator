@@ -104,7 +104,13 @@
     "builtInValidation": true
   },
   "policy": {
-    "type": "RANDOM"
+    "type": "RANDOM",
+    "groups": [
+      {
+        "transitions": [2, 5, 7],
+        "weights": [1, 1, 1]
+      }
+    ]
   },
   "stop": {
     "transition": 11,

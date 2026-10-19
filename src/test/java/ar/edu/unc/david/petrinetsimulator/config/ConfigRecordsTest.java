@@ -13,6 +13,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.LoggingConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.NetConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.PlaceInvariantConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.PolicyConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.PolicyGroupConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.StopConfig;
@@ -61,32 +62,66 @@ class ConfigRecordsTest {
     @Test
     @DisplayName("accepts RANDOM")
     void acceptsRandomUppercase() {
-      assertDoesNotThrow(() -> new PolicyConfig("RANDOM"));
+      assertDoesNotThrow(() -> new PolicyConfig("RANDOM", List.of()));
     }
 
     @Test
     @DisplayName("accepts random (case-insensitive)")
     void acceptsRandomLowercase() {
-      PolicyConfig config = new PolicyConfig("random");
+      PolicyConfig config = new PolicyConfig("random", List.of());
       assertEquals("random", config.type());
+    }
+
+    @Test
+    @DisplayName("accepts PROPORTION with policy groups")
+    void acceptsProportionWithPolicyGroups() {
+      PolicyConfig config =
+          new PolicyConfig(
+              "PROPORTION", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1})));
+
+      assertEquals("PROPORTION", config.type().toUpperCase());
+      assertEquals(1, config.groups().size());
     }
 
     @Test
     @DisplayName("rejects null type")
     void rejectsNullType() {
-      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig(null));
+      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig(null, List.of()));
     }
 
     @Test
     @DisplayName("rejects blank type")
     void rejectsBlankType() {
-      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig("   "));
+      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig("   ", List.of()));
     }
 
     @Test
     @DisplayName("rejects unsupported type")
     void rejectsUnsupportedType() {
-      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig("ROUND_ROBIN"));
+      assertThrows(
+          IllegalArgumentException.class, () -> new PolicyConfig("ROUND_ROBIN", List.of()));
+    }
+  }
+
+  @Nested
+  @DisplayName("PolicyGroupConfig")
+  class PolicyGroupConfigTests {
+
+    @Test
+    @DisplayName("accepts valid group configuration")
+    void acceptsValidGroupConfig() {
+      PolicyGroupConfig config = new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 2});
+
+      assertArrayEquals(new int[] {2, 3}, config.transitions());
+      assertArrayEquals(new int[] {1, 2}, config.weights());
+    }
+
+    @Test
+    @DisplayName("rejects mismatched lengths")
+    void rejectsMismatchedLengths() {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new PolicyGroupConfig(new int[] {2, 3}, new int[] {1}));
     }
   }
 
@@ -531,7 +566,8 @@ class ConfigRecordsTest {
               List.of(new AgentConfig("P", 1, new int[] {0}, 1, null)),
               new LoggingConfig("petri_log.csv", false),
               new RuntimeConfig(10_000, true),
-              new PolicyConfig("RANDOM"),
+              new PolicyConfig(
+                  "RANDOM", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1}))),
               new StopConfig(11, 200));
 
       assertEquals(2, config.net().pre().length);
@@ -539,7 +575,8 @@ class ConfigRecordsTest {
       assertEquals(1, config.agents().size());
       assertEquals("petri_log.csv", config.logging().file());
       assertEquals(10_000, config.runtime().joinTimeoutMs());
-      assertEquals("RANDOM", config.policy().type());
+      assertEquals("RANDOM", config.policy().type().toUpperCase());
+      assertEquals(1, config.policy().groups().size());
       assertEquals(11, config.stop().transition());
       assertEquals(200, config.stop().count());
     }

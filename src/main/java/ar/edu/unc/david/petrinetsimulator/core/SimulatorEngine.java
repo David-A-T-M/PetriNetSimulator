@@ -30,13 +30,26 @@ public class SimulatorEngine {
 
   /** Builds the Petri net and monitor based on the provided simulation configuration. */
   public static Components build(SimulationConfig config, PetriLogger logger) {
+    Policy policy = PolicyFactory.create(config.policy());
+    return build(config, logger, policy);
+  }
+
+  /**
+   * Builds the Petri net and monitor using an explicitly supplied policy.
+   *
+   * @param config The simulation configuration.
+   * @param logger The logger to use for logging.
+   * @param policy The policy to use for the simulation.
+   * @return The components needed to run the simulation.
+   * @apiNote This method is intended for internal use only.
+   */
+  public static Components build(SimulationConfig config, PetriLogger logger, Policy policy) {
     NetConfig net = config.net();
     PetriNetMatrix matrix = new PetriNetMatrix(net.pre(), net.post());
     long[] alpha = buildAlphaArray(net, matrix.numTransitions());
     long[] beta = buildBetaArray(net, matrix.numTransitions());
     PetriNet petriNet = new PetriNet(net.initialMarking(), matrix, alpha, beta);
 
-    Policy policy = PolicyFactory.create(config.policy().type());
     StopCondition stopCondition =
         config.stop() == null
             ? null

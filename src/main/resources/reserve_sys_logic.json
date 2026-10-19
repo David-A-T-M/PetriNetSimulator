@@ -129,7 +129,17 @@
     "builtInValidation": true
   },
   "policy": {
-    "type": "RANDOM"
+    "type": "RANDOM",
+    "groups": [
+      {
+        "transitions": [2, 3],
+        "weights": [1, 1]
+      },
+      {
+        "transitions": [6, 7],
+        "weights": [1, 1]
+      }
+    ]
   },
   "stop": {
     "transition": 11,

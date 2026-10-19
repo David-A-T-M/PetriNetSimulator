@@ -62,7 +62,7 @@ public class MonitorStopConditionTest {
                         new AgentConfig("A", 1, new int[] {0}, -1, null)),
                     new LoggingConfig(logFile.toString(), false),
                     new RuntimeConfig(5_000, true),
-                    new PolicyConfig("RANDOM"),
+                    new PolicyConfig("RANDOM", List.of()),
                     new StopConfig(0, 4));
 
             SimulatorEngine.Components components = SimulatorEngine.build(config, logger);

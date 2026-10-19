@@ -39,6 +39,7 @@ class ConfigLoaderTest {
     assertEquals(2, config.net().post().length);
     assertEquals(2, config.net().initialMarking().length);
     assertEquals("RANDOM", config.policy().type());
+    assertTrue(config.policy().groups().isEmpty());
     assertEquals(5000, config.runtime().joinTimeoutMs());
     assertTrue(config.runtime().builtInValidation());
     assertNull(config.stop());
@@ -54,6 +55,8 @@ class ConfigLoaderTest {
 
     assertNotNull(reserveSys.stop());
     assertNotNull(dataProc.stop());
+    assertEquals(2, reserveSys.policy().groups().size());
+    assertEquals(1, dataProc.policy().groups().size());
     assertEquals(11, reserveSys.stop().transition());
     assertEquals(186, reserveSys.stop().count());
     assertEquals(11, dataProc.stop().transition());
