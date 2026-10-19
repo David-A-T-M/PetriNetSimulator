@@ -1,9 +1,11 @@
 package ar.edu.unc.david.petrinetsimulator.monitor;
 
+import ar.edu.unc.david.petrinetsimulator.config.logic.PlaceInvariantConfig;
 import ar.edu.unc.david.petrinetsimulator.core.PetriNet;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import ar.edu.unc.david.petrinetsimulator.policy.Policy;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -18,6 +20,8 @@ public class Monitor implements MonitorInterface {
   private final Policy policy;
   private final PetriLogger logger;
   private final StopCondition stopCondition;
+  private final List<PlaceInvariantConfig> placeInvariants;
+  private final boolean checkPlaceInvariants;
 
   private final ReentrantLock lock = new ReentrantLock(true);
   private final Condition[] condVar;
@@ -33,7 +37,7 @@ public class Monitor implements MonitorInterface {
    * @param logger the logger used to record waiting and firing events.
    */
   public Monitor(PetriNet petriNet, Policy policy, PetriLogger logger) {
-    this(petriNet, policy, logger, null);
+    this(petriNet, policy, logger, null, List.of(), true);
   }
 
   /**
@@ -46,10 +50,28 @@ public class Monitor implements MonitorInterface {
    */
   public Monitor(
       PetriNet petriNet, Policy policy, PetriLogger logger, StopCondition stopCondition) {
+    this(petriNet, policy, logger, stopCondition, List.of(), true);
+  }
+
+  /**
+   * Initializes the Monitor with optional stop condition and place invariants to validate.
+   *
+   * @param placeInvariants place invariants defined for the active net
+   * @param checkPlaceInvariants whether to validate place invariants after each fire
+   */
+  public Monitor(
+      PetriNet petriNet,
+      Policy policy,
+      PetriLogger logger,
+      StopCondition stopCondition,
+      List<PlaceInvariantConfig> placeInvariants,
+      boolean checkPlaceInvariants) {
     this.petriNet = petriNet;
     this.policy = policy;
     this.logger = logger;
     this.stopCondition = stopCondition;
+    this.placeInvariants = placeInvariants == null ? List.of() : List.copyOf(placeInvariants);
+    this.checkPlaceInvariants = checkPlaceInvariants;
 
     int numTransitions = petriNet.matrix().numTransitions();
     this.queues = new WaitingQueues(numTransitions);
@@ -123,6 +145,7 @@ public class Monitor implements MonitorInterface {
 
         int[] markingBefore = petriNet.getMarking().clone();
         petriNet.fire(transition);
+        validatePlaceInvariants(transition);
         int[] markingAfter = petriNet.getMarking();
 
         logger.logFire(transition, markingBefore, markingAfter);
@@ -190,6 +213,26 @@ public class Monitor implements MonitorInterface {
   private void signalAllWaitingThreads() {
     for (Condition condition : condVar) {
       condition.signalAll();
+    }
+  }
+
+  private void validatePlaceInvariants(int transition) {
+    if (!checkPlaceInvariants || placeInvariants.isEmpty()) {
+      return;
+    }
+
+    for (int i = 0; i < placeInvariants.size(); i++) {
+      PlaceInvariantConfig invariant = placeInvariants.get(i);
+      boolean holds = petriNet.checkPlacesInvariant(invariant.places(), invariant.constant());
+      if (!holds) {
+        throw new IllegalStateException(
+            "Place invariant violation after firing transition "
+                + transition
+                + " at invariant index "
+                + i
+                + ": expected constant "
+                + invariant.constant());
+      }
     }
   }
 }

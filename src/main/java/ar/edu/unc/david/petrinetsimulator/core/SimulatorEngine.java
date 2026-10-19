@@ -54,7 +54,16 @@ public class SimulatorEngine {
         config.stop() == null
             ? null
             : new StopCondition(config.stop().transition(), config.stop().count());
-    Monitor monitor = new Monitor(petriNet, policy, logger, stopCondition);
+    boolean checkPlaceInvariants =
+        config.runtime() == null || Boolean.TRUE.equals(config.runtime().checkPlaceInvariants());
+    Monitor monitor =
+        new Monitor(
+            petriNet,
+            policy,
+            logger,
+            stopCondition,
+            config.placeInvariants(),
+            checkPlaceInvariants);
 
     return new Components(
         petriNet, monitor, config.agents(), config.runtime(), resolveLogFile(config.logging()));

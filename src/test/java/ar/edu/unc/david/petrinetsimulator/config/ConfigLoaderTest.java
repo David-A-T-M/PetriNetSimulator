@@ -42,6 +42,7 @@ class ConfigLoaderTest {
     assertTrue(config.policy().groups().isEmpty());
     assertEquals(5000, config.runtime().joinTimeoutMs());
     assertTrue(config.runtime().builtInValidation());
+    assertTrue(config.runtime().checkPlaceInvariants());
     assertNull(config.stop());
   }
 
@@ -61,6 +62,8 @@ class ConfigLoaderTest {
     assertEquals(186, reserveSys.stop().count());
     assertEquals(11, dataProc.stop().transition());
     assertEquals(200, dataProc.stop().count());
+    assertTrue(reserveSys.runtime().checkPlaceInvariants());
+    assertTrue(dataProc.runtime().checkPlaceInvariants());
 
     reserveSys.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
     dataProc.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
@@ -164,7 +167,8 @@ class ConfigLoaderTest {
           },
           "runtime": {
             "joinTimeoutMs": 5000,
-            "builtInValidation": true
+            "builtInValidation": true,
+            "checkPlaceInvariants": true
           },
           "policy": {
             "type": "RANDOM"

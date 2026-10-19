@@ -160,7 +160,8 @@ The simulator is configured via the `SimulationConfig` records. Example:
   },
   "runtime": {
     "joinTimeoutMs": 40000,
-    "builtInValidation": true
+    "builtInValidation": true,
+    "checkPlaceInvariants": true
   },
   "policy": {
     "type": "PROPORTION",
@@ -200,6 +201,9 @@ Packaged networks use selective timing:
 ### Built-in Java validation
 
 At the end of `main`, if `runtime.builtInValidation` is `true`, the simulator validates log structure using `PetriLogValidator`.
+
+When `runtime.checkPlaceInvariants` is `true` (default), the monitor validates all configured place invariants
+immediately after each successful transition fire and fails fast if one is violated.
 
 ### External Python semantic validation
 
@@ -294,6 +298,9 @@ Temporal behavior is covered by `PetriNetTest` cases for:
 - re-fire while still enabled requiring a fresh `alpha` wait,
 - immediate re-fire when `alpha = 0`,
 - enabled-loss/enabled-recovery resetting temporal eligibility.
+
+Place invariant runtime enforcement is covered by monitor tests for valid invariants, explicit violations, and the
+runtime opt-out flag.
 
 ## Known Limitations
 

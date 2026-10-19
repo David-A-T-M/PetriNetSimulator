@@ -37,15 +37,17 @@ class ConfigRecordsTest {
 
       assertEquals(0, config.joinTimeoutMs());
       assertTrue(config.builtInValidation());
+      assertTrue(config.checkPlaceInvariants());
     }
 
     @Test
     @DisplayName("accepts positive timeout")
     void acceptsPositiveTimeout() {
-      RuntimeConfig config = new RuntimeConfig(30_000, false);
+      RuntimeConfig config = new RuntimeConfig(30_000, false, false);
 
       assertEquals(30_000, config.joinTimeoutMs());
       assertFalse(config.builtInValidation());
+      assertFalse(config.checkPlaceInvariants());
     }
 
     @Test
@@ -53,546 +55,556 @@ class ConfigRecordsTest {
     void rejectsNegativeTimeout() {
       assertThrows(IllegalArgumentException.class, () -> new RuntimeConfig(-1, true));
     }
-  }
-
-  @Nested
-  @DisplayName("PolicyConfig")
-  class PolicyConfigTests {
 
     @Test
-    @DisplayName("accepts RANDOM")
-    void acceptsRandomUppercase() {
-      assertDoesNotThrow(() -> new PolicyConfig("RANDOM", List.of()));
+    @DisplayName("defaults checkPlaceInvariants to true when null")
+    void defaultsCheckPlaceInvariantsToTrueWhenNull() {
+      RuntimeConfig config = new RuntimeConfig(30_000, true, null);
+
+      assertTrue(config.checkPlaceInvariants());
     }
 
-    @Test
-    @DisplayName("accepts random (case-insensitive)")
-    void acceptsRandomLowercase() {
-      PolicyConfig config = new PolicyConfig("random", List.of());
-      assertEquals("random", config.type());
+    @Nested
+    @DisplayName("PolicyConfig")
+    class PolicyConfigTests {
+
+      @Test
+      @DisplayName("accepts RANDOM")
+      void acceptsRandomUppercase() {
+        assertDoesNotThrow(() -> new PolicyConfig("RANDOM", List.of()));
+      }
+
+      @Test
+      @DisplayName("accepts random (case-insensitive)")
+      void acceptsRandomLowercase() {
+        PolicyConfig config = new PolicyConfig("random", List.of());
+        assertEquals("random", config.type());
+      }
+
+      @Test
+      @DisplayName("accepts PROPORTION with policy groups")
+      void acceptsProportionWithPolicyGroups() {
+        PolicyConfig config =
+            new PolicyConfig(
+                "PROPORTION", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1})));
+
+        assertEquals("PROPORTION", config.type().toUpperCase());
+        assertEquals(1, config.groups().size());
+      }
+
+      @Test
+      @DisplayName("rejects null type")
+      void rejectsNullType() {
+        assertThrows(IllegalArgumentException.class, () -> new PolicyConfig(null, List.of()));
+      }
+
+      @Test
+      @DisplayName("rejects blank type")
+      void rejectsBlankType() {
+        assertThrows(IllegalArgumentException.class, () -> new PolicyConfig("   ", List.of()));
+      }
+
+      @Test
+      @DisplayName("rejects unsupported type")
+      void rejectsUnsupportedType() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new PolicyConfig("ROUND_ROBIN", List.of()));
+      }
     }
 
-    @Test
-    @DisplayName("accepts PROPORTION with policy groups")
-    void acceptsProportionWithPolicyGroups() {
-      PolicyConfig config =
-          new PolicyConfig(
-              "PROPORTION", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1})));
+    @Nested
+    @DisplayName("PolicyGroupConfig")
+    class PolicyGroupConfigTests {
 
-      assertEquals("PROPORTION", config.type().toUpperCase());
-      assertEquals(1, config.groups().size());
+      @Test
+      @DisplayName("accepts valid group configuration")
+      void acceptsValidGroupConfig() {
+        PolicyGroupConfig config = new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 2});
+
+        assertArrayEquals(new int[] {2, 3}, config.transitions());
+        assertArrayEquals(new int[] {1, 2}, config.weights());
+      }
+
+      @Test
+      @DisplayName("rejects mismatched lengths")
+      void rejectsMismatchedLengths() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new PolicyGroupConfig(new int[] {2, 3}, new int[] {1}));
+      }
     }
 
-    @Test
-    @DisplayName("rejects null type")
-    void rejectsNullType() {
-      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig(null, List.of()));
+    @Nested
+    @DisplayName("TransitionConfig")
+    class TransitionConfigTests {
+
+      @Test
+      @DisplayName("accepts valid timing config")
+      void acceptsValidTransitionConfig() {
+        TransitionConfig config = new TransitionConfig(0, 0L, 10L);
+
+        assertEquals(0, config.id());
+        assertEquals(0L, config.alpha());
+        assertEquals(10L, config.beta());
+      }
+
+      @Test
+      @DisplayName("accepts alpha == beta")
+      void acceptsEqualBounds() {
+        assertDoesNotThrow(() -> new TransitionConfig(1, 5L, 5L));
+      }
+
+      @Test
+      @DisplayName("rejects negative id")
+      void rejectsNegativeId() {
+        assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(-1, 0L, 10L));
+      }
+
+      @Test
+      @DisplayName("rejects negative alpha")
+      void rejectsNegativeAlpha() {
+        assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, -1L, 10L));
+      }
+
+      @Test
+      @DisplayName("rejects negative beta")
+      void rejectsNegativeBeta() {
+        assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, 1L, -1L));
+      }
+
+      @Test
+      @DisplayName("rejects alpha greater than beta")
+      void rejectsAlphaGreaterThanBeta() {
+        assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, 11L, 10L));
+      }
     }
 
-    @Test
-    @DisplayName("rejects blank type")
-    void rejectsBlankType() {
-      assertThrows(IllegalArgumentException.class, () -> new PolicyConfig("   ", List.of()));
+    @Nested
+    @DisplayName("AgentConfig")
+    class AgentConfigTests {
+
+      @Test
+      @DisplayName("accepts valid agent config")
+      void acceptsValidAgentConfig() {
+        AgentConfig config = new AgentConfig("P", 2, new int[] {0, 1, 2}, 100, null);
+
+        assertEquals("P", config.namePrefix());
+        assertEquals(2, config.count());
+        assertArrayEquals(new int[] {0, 1, 2}, config.sequence());
+        assertEquals(100, config.cycles());
+      }
+
+      @Test
+      @DisplayName("rejects count == 0")
+      void rejectsCountZero() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new AgentConfig("P", 0, new int[] {0}, 1, null));
+      }
+
+      @Test
+      @DisplayName("rejects count < 0")
+      void rejectsCountNegative() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new AgentConfig("P", -1, new int[] {0}, 1, null));
+      }
+
+      @Test
+      @DisplayName("rejects cycles == 0")
+      void rejectsCyclesZero() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, 0, null));
+      }
+
+      @Test
+      @DisplayName("accepts negative cycles for infinite mode")
+      void acceptsNegativeCyclesForInfiniteMode() {
+        AgentConfig config = new AgentConfig("P", 1, new int[] {0}, -1, null);
+
+        assertEquals(-1, config.cycles());
+      }
+
+      @Test
+      @DisplayName("rejects null namePrefix")
+      void rejectsNullNamePrefix() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AgentConfig(null, 1, new int[] {0, 1}, 10, null));
+      }
+
+      @Test
+      @DisplayName("rejects blank namePrefix")
+      void rejectsBlankNamePrefix() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AgentConfig("   ", 1, new int[] {0, 1}, 10, null));
+      }
+
+      @Test
+      @DisplayName("rejects null sequence")
+      void rejectsNullSequence() {
+        assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, null, 10, null));
+      }
+
+      @Test
+      @DisplayName("rejects empty sequence")
+      void rejectsEmptySequence() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {}, 10, null));
+      }
     }
 
-    @Test
-    @DisplayName("rejects unsupported type")
-    void rejectsUnsupportedType() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new PolicyConfig("ROUND_ROBIN", List.of()));
-    }
-  }
+    @Nested
+    @DisplayName("StopConfig")
+    class StopConfigTests {
 
-  @Nested
-  @DisplayName("PolicyGroupConfig")
-  class PolicyGroupConfigTests {
+      @Test
+      @DisplayName("accepts valid stop configuration")
+      void acceptsValidStopConfiguration() {
+        StopConfig config = new StopConfig(11, 200);
+        assertEquals(11, config.transition());
+        assertEquals(200, config.count());
+      }
 
-    @Test
-    @DisplayName("accepts valid group configuration")
-    void acceptsValidGroupConfig() {
-      PolicyGroupConfig config = new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 2});
+      @Test
+      @DisplayName("rejects negative transition")
+      void rejectsNegativeTransition() {
+        assertThrows(IllegalArgumentException.class, () -> new StopConfig(-1, 200));
+      }
 
-      assertArrayEquals(new int[] {2, 3}, config.transitions());
-      assertArrayEquals(new int[] {1, 2}, config.weights());
-    }
-
-    @Test
-    @DisplayName("rejects mismatched lengths")
-    void rejectsMismatchedLengths() {
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> new PolicyGroupConfig(new int[] {2, 3}, new int[] {1}));
-    }
-  }
-
-  @Nested
-  @DisplayName("TransitionConfig")
-  class TransitionConfigTests {
-
-    @Test
-    @DisplayName("accepts valid timing config")
-    void acceptsValidTransitionConfig() {
-      TransitionConfig config = new TransitionConfig(0, 0L, 10L);
-
-      assertEquals(0, config.id());
-      assertEquals(0L, config.alpha());
-      assertEquals(10L, config.beta());
+      @Test
+      @DisplayName("rejects zero count")
+      void rejectsZeroCount() {
+        assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 0));
+      }
     }
 
-    @Test
-    @DisplayName("accepts alpha == beta")
-    void acceptsEqualBounds() {
-      assertDoesNotThrow(() -> new TransitionConfig(1, 5L, 5L));
+    @Nested
+    @DisplayName("NetConfig")
+    class NetConfigTests {
+
+      @Test
+      @DisplayName("accepts valid matrices, initial marking, and transitions")
+      void acceptsValidNetConfig() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
+
+        NetConfig config = new NetConfig(pre, post, initial, transitions);
+
+        assertArrayEquals(pre, config.pre());
+        assertArrayEquals(post, config.post());
+        assertArrayEquals(initial, config.initialMarking());
+        assertEquals(2, config.transitions().size());
+      }
+
+      @Test
+      @DisplayName("rejects empty pre matrix")
+      void rejectsEmptyPre() {
+        int[][] pre = {};
+        int[][] post = {{0}};
+        int[] initial = {1};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects empty post matrix")
+      void rejectsEmptyPost() {
+        int[][] pre = {{1}};
+        int[][] post = {};
+        int[] initial = {1};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects different place count between pre and post")
+      void rejectsDifferentPlaceCount() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {{0, 1}};
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects initialMarking size different from places")
+      void rejectsDifferentInitialMarkingSize() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects different transition count between pre and post")
+      void rejectsDifferentTransitionCount() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1, 0},
+          {1, 0, 1}
+        };
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects null transitions list")
+      void rejectsNullTransitions() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1, 0};
+
+        assertThrows(IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, null));
+      }
+
+      @Test
+      @DisplayName("rejects transitions size mismatch")
+      void rejectsTransitionsSizeMismatch() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects transition id out of bounds")
+      void rejectsTransitionIdOutOfBounds() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(2, 5L, 15L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("rejects when some transition id is missing")
+      void rejectsMissingTransitionId() {
+        int[][] pre = {
+          {1, 0},
+          {0, 1}
+        };
+        int[][] post = {
+          {0, 1},
+          {1, 0}
+        };
+        int[] initial = {1, 0};
+        List<TransitionConfig> transitions =
+            List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(0, 5L, 15L));
+
+        assertThrows(
+            IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("current behavior: null pre throws NullPointerException")
+      void nullPreThrowsNpe() {
+        int[][] post = {{0}};
+        int[] initial = {0};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(
+            NullPointerException.class, () -> new NetConfig(null, post, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("current behavior: null post throws NullPointerException")
+      void nullPostThrowsNpe() {
+        int[][] pre = {{1}};
+        int[] initial = {0};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(
+            NullPointerException.class, () -> new NetConfig(pre, null, initial, transitions));
+      }
+
+      @Test
+      @DisplayName("current behavior: null initialMarking throws NullPointerException")
+      void nullInitialMarkingThrowsNpe() {
+        int[][] pre = {{1}};
+        int[][] post = {{0}};
+        List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
+
+        assertThrows(NullPointerException.class, () -> new NetConfig(pre, post, null, transitions));
+      }
     }
 
-    @Test
-    @DisplayName("rejects negative id")
-    void rejectsNegativeId() {
-      assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(-1, 0L, 10L));
+    @Nested
+    @DisplayName("PlaceInvariantConfig")
+    class PlaceInvariantConfigTests {
+
+      @Test
+      @DisplayName("accepts valid places and non-negative constant")
+      void acceptsValidInvariant() {
+        PlaceInvariantConfig config = new PlaceInvariantConfig(new int[] {0, 1, 2}, 3);
+
+        assertArrayEquals(new int[] {0, 1, 2}, config.places());
+        assertEquals(3, config.constant());
+      }
+
+      @Test
+      @DisplayName("rejects null places")
+      void rejectsNullPlaces() {
+        assertThrows(IllegalArgumentException.class, () -> new PlaceInvariantConfig(null, 1));
+      }
+
+      @Test
+      @DisplayName("rejects empty places")
+      void rejectsEmptyPlaces() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new PlaceInvariantConfig(new int[] {}, 1));
+      }
+
+      @Test
+      @DisplayName("rejects negative place entry")
+      void rejectsNegativePlaceEntry() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new PlaceInvariantConfig(new int[] {0, -1, 2}, 1));
+      }
+
+      @Test
+      @DisplayName("rejects negative constant")
+      void rejectsNegativeConstant() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new PlaceInvariantConfig(new int[] {0, 1}, -1));
+      }
     }
 
-    @Test
-    @DisplayName("rejects negative alpha")
-    void rejectsNegativeAlpha() {
-      assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, -1L, 10L));
+    @Nested
+    @DisplayName("LoggingConfig")
+    class LoggingConfigTests {
+
+      @Test
+      @DisplayName("stores values as provided")
+      void storesValuesAsProvided() {
+        LoggingConfig config = new LoggingConfig("petri_log.csv", true);
+
+        assertEquals("petri_log.csv", config.file());
+        assertTrue(config.logWaitWake());
+      }
+
+      @Test
+      @DisplayName("current behavior: allows null file")
+      void allowsNullFileCurrently() {
+        LoggingConfig config = new LoggingConfig(null, false);
+
+        assertNull(config.file());
+        assertFalse(config.logWaitWake());
+      }
     }
 
-    @Test
-    @DisplayName("rejects negative beta")
-    void rejectsNegativeBeta() {
-      assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, 1L, -1L));
-    }
+    @Nested
+    @DisplayName("SimulationConfig")
+    class SimulationConfigTests {
 
-    @Test
-    @DisplayName("rejects alpha greater than beta")
-    void rejectsAlphaGreaterThanBeta() {
-      assertThrows(IllegalArgumentException.class, () -> new TransitionConfig(0, 11L, 10L));
-    }
-  }
+      @Test
+      @DisplayName("stores all nested config sections")
+      void storesAllSections() {
+        SimulationConfig config =
+            new SimulationConfig(
+                new NetConfig(
+                    new int[][] {
+                      {1, 0},
+                      {0, 1}
+                    },
+                    new int[][] {
+                      {0, 1},
+                      {1, 0}
+                    },
+                    new int[] {1, 0},
+                    List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L))),
+                List.of(new PlaceInvariantConfig(new int[] {1, 1}, 1)),
+                List.of(new AgentConfig("P", 1, new int[] {0}, 1, null)),
+                new LoggingConfig("petri_log.csv", false),
+                new RuntimeConfig(10_000, true),
+                new PolicyConfig(
+                    "RANDOM", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1}))),
+                new StopConfig(11, 200));
 
-  @Nested
-  @DisplayName("AgentConfig")
-  class AgentConfigTests {
+        assertEquals(2, config.net().pre().length);
+        assertEquals(1, config.placeInvariants().size());
+        assertEquals(1, config.agents().size());
+        assertEquals("petri_log.csv", config.logging().file());
+        assertEquals(10_000, config.runtime().joinTimeoutMs());
+        assertEquals("RANDOM", config.policy().type().toUpperCase());
+        assertEquals(1, config.policy().groups().size());
+        assertEquals(11, config.stop().transition());
+        assertEquals(200, config.stop().count());
+      }
 
-    @Test
-    @DisplayName("accepts valid agent config")
-    void acceptsValidAgentConfig() {
-      AgentConfig config = new AgentConfig("P", 2, new int[] {0, 1, 2}, 100, null);
+      @Test
+      @DisplayName("current behavior: allows null sections")
+      void allowsNullSectionsCurrently() {
+        SimulationConfig config = new SimulationConfig(null, null, null, null, null, null, null);
 
-      assertEquals("P", config.namePrefix());
-      assertEquals(2, config.count());
-      assertArrayEquals(new int[] {0, 1, 2}, config.sequence());
-      assertEquals(100, config.cycles());
-    }
-
-    @Test
-    @DisplayName("rejects count == 0")
-    void rejectsCountZero() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", 0, new int[] {0}, 1, null));
-    }
-
-    @Test
-    @DisplayName("rejects count < 0")
-    void rejectsCountNegative() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", -1, new int[] {0}, 1, null));
-    }
-
-    @Test
-    @DisplayName("rejects cycles == 0")
-    void rejectsCyclesZero() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {0}, 0, null));
-    }
-
-    @Test
-    @DisplayName("accepts negative cycles for infinite mode")
-    void acceptsNegativeCyclesForInfiniteMode() {
-      AgentConfig config = new AgentConfig("P", 1, new int[] {0}, -1, null);
-
-      assertEquals(-1, config.cycles());
-    }
-
-    @Test
-    @DisplayName("rejects null namePrefix")
-    void rejectsNullNamePrefix() {
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> new AgentConfig(null, 1, new int[] {0, 1}, 10, null));
-    }
-
-    @Test
-    @DisplayName("rejects blank namePrefix")
-    void rejectsBlankNamePrefix() {
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> new AgentConfig("   ", 1, new int[] {0, 1}, 10, null));
-    }
-
-    @Test
-    @DisplayName("rejects null sequence")
-    void rejectsNullSequence() {
-      assertThrows(IllegalArgumentException.class, () -> new AgentConfig("P", 1, null, 10, null));
-    }
-
-    @Test
-    @DisplayName("rejects empty sequence")
-    void rejectsEmptySequence() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new AgentConfig("P", 1, new int[] {}, 10, null));
-    }
-  }
-
-  @Nested
-  @DisplayName("StopConfig")
-  class StopConfigTests {
-
-    @Test
-    @DisplayName("accepts valid stop configuration")
-    void acceptsValidStopConfiguration() {
-      StopConfig config = new StopConfig(11, 200);
-      assertEquals(11, config.transition());
-      assertEquals(200, config.count());
-    }
-
-    @Test
-    @DisplayName("rejects negative transition")
-    void rejectsNegativeTransition() {
-      assertThrows(IllegalArgumentException.class, () -> new StopConfig(-1, 200));
-    }
-
-    @Test
-    @DisplayName("rejects zero count")
-    void rejectsZeroCount() {
-      assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 0));
-    }
-  }
-
-  @Nested
-  @DisplayName("NetConfig")
-  class NetConfigTests {
-
-    @Test
-    @DisplayName("accepts valid matrices, initial marking, and transitions")
-    void acceptsValidNetConfig() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
-
-      NetConfig config = new NetConfig(pre, post, initial, transitions);
-
-      assertArrayEquals(pre, config.pre());
-      assertArrayEquals(post, config.post());
-      assertArrayEquals(initial, config.initialMarking());
-      assertEquals(2, config.transitions().size());
-    }
-
-    @Test
-    @DisplayName("rejects empty pre matrix")
-    void rejectsEmptyPre() {
-      int[][] pre = {};
-      int[][] post = {{0}};
-      int[] initial = {1};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects empty post matrix")
-    void rejectsEmptyPost() {
-      int[][] pre = {{1}};
-      int[][] post = {};
-      int[] initial = {1};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects different place count between pre and post")
-    void rejectsDifferentPlaceCount() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {{0, 1}};
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects initialMarking size different from places")
-    void rejectsDifferentInitialMarkingSize() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects different transition count between pre and post")
-    void rejectsDifferentTransitionCount() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1, 0},
-        {1, 0, 1}
-      };
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects null transitions list")
-    void rejectsNullTransitions() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1, 0};
-
-      assertThrows(IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, null));
-    }
-
-    @Test
-    @DisplayName("rejects transitions size mismatch")
-    void rejectsTransitionsSizeMismatch() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects transition id out of bounds")
-    void rejectsTransitionIdOutOfBounds() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(2, 5L, 15L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("rejects when some transition id is missing")
-    void rejectsMissingTransitionId() {
-      int[][] pre = {
-        {1, 0},
-        {0, 1}
-      };
-      int[][] post = {
-        {0, 1},
-        {1, 0}
-      };
-      int[] initial = {1, 0};
-      List<TransitionConfig> transitions =
-          List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(0, 5L, 15L));
-
-      assertThrows(
-          IllegalArgumentException.class, () -> new NetConfig(pre, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("current behavior: null pre throws NullPointerException")
-    void nullPreThrowsNpe() {
-      int[][] post = {{0}};
-      int[] initial = {0};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(
-          NullPointerException.class, () -> new NetConfig(null, post, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("current behavior: null post throws NullPointerException")
-    void nullPostThrowsNpe() {
-      int[][] pre = {{1}};
-      int[] initial = {0};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(
-          NullPointerException.class, () -> new NetConfig(pre, null, initial, transitions));
-    }
-
-    @Test
-    @DisplayName("current behavior: null initialMarking throws NullPointerException")
-    void nullInitialMarkingThrowsNpe() {
-      int[][] pre = {{1}};
-      int[][] post = {{0}};
-      List<TransitionConfig> transitions = List.of(new TransitionConfig(0, 0L, 10L));
-
-      assertThrows(NullPointerException.class, () -> new NetConfig(pre, post, null, transitions));
-    }
-  }
-
-  @Nested
-  @DisplayName("PlaceInvariantConfig")
-  class PlaceInvariantConfigTests {
-
-    @Test
-    @DisplayName("accepts valid places and non-negative constant")
-    void acceptsValidInvariant() {
-      PlaceInvariantConfig config = new PlaceInvariantConfig(new int[] {0, 1, 2}, 3);
-
-      assertArrayEquals(new int[] {0, 1, 2}, config.places());
-      assertEquals(3, config.constant());
-    }
-
-    @Test
-    @DisplayName("rejects null places")
-    void rejectsNullPlaces() {
-      assertThrows(IllegalArgumentException.class, () -> new PlaceInvariantConfig(null, 1));
-    }
-
-    @Test
-    @DisplayName("rejects empty places")
-    void rejectsEmptyPlaces() {
-      assertThrows(IllegalArgumentException.class, () -> new PlaceInvariantConfig(new int[] {}, 1));
-    }
-
-    @Test
-    @DisplayName("rejects negative place entry")
-    void rejectsNegativePlaceEntry() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new PlaceInvariantConfig(new int[] {0, -1, 2}, 1));
-    }
-
-    @Test
-    @DisplayName("rejects negative constant")
-    void rejectsNegativeConstant() {
-      assertThrows(
-          IllegalArgumentException.class, () -> new PlaceInvariantConfig(new int[] {0, 1}, -1));
-    }
-  }
-
-  @Nested
-  @DisplayName("LoggingConfig")
-  class LoggingConfigTests {
-
-    @Test
-    @DisplayName("stores values as provided")
-    void storesValuesAsProvided() {
-      LoggingConfig config = new LoggingConfig("petri_log.csv", true);
-
-      assertEquals("petri_log.csv", config.file());
-      assertTrue(config.logWaitWake());
-    }
-
-    @Test
-    @DisplayName("current behavior: allows null file")
-    void allowsNullFileCurrently() {
-      LoggingConfig config = new LoggingConfig(null, false);
-
-      assertNull(config.file());
-      assertFalse(config.logWaitWake());
-    }
-  }
-
-  @Nested
-  @DisplayName("SimulationConfig")
-  class SimulationConfigTests {
-
-    @Test
-    @DisplayName("stores all nested config sections")
-    void storesAllSections() {
-      SimulationConfig config =
-          new SimulationConfig(
-              new NetConfig(
-                  new int[][] {
-                    {1, 0},
-                    {0, 1}
-                  },
-                  new int[][] {
-                    {0, 1},
-                    {1, 0}
-                  },
-                  new int[] {1, 0},
-                  List.of(new TransitionConfig(0, 0L, 10L), new TransitionConfig(1, 5L, 15L))),
-              List.of(new PlaceInvariantConfig(new int[] {1, 1}, 1)),
-              List.of(new AgentConfig("P", 1, new int[] {0}, 1, null)),
-              new LoggingConfig("petri_log.csv", false),
-              new RuntimeConfig(10_000, true),
-              new PolicyConfig(
-                  "RANDOM", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1}))),
-              new StopConfig(11, 200));
-
-      assertEquals(2, config.net().pre().length);
-      assertEquals(1, config.placeInvariants().size());
-      assertEquals(1, config.agents().size());
-      assertEquals("petri_log.csv", config.logging().file());
-      assertEquals(10_000, config.runtime().joinTimeoutMs());
-      assertEquals("RANDOM", config.policy().type().toUpperCase());
-      assertEquals(1, config.policy().groups().size());
-      assertEquals(11, config.stop().transition());
-      assertEquals(200, config.stop().count());
-    }
-
-    @Test
-    @DisplayName("current behavior: allows null sections")
-    void allowsNullSectionsCurrently() {
-      SimulationConfig config = new SimulationConfig(null, null, null, null, null, null, null);
-
-      assertNull(config.net());
-      assertNull(config.placeInvariants());
-      assertNull(config.agents());
-      assertNull(config.logging());
-      assertNull(config.runtime());
-      assertNull(config.policy());
-      assertNull(config.stop());
+        assertNull(config.net());
+        assertNull(config.placeInvariants());
+        assertNull(config.agents());
+        assertNull(config.logging());
+        assertNull(config.runtime());
+        assertNull(config.policy());
+        assertNull(config.stop());
+      }
     }
   }
 }
