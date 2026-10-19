@@ -7,6 +7,7 @@ import ar.edu.unc.david.petrinetsimulator.policy.Policy;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -84,16 +85,16 @@ public class Monitor implements MonitorInterface {
 
   @Override
   public boolean fireTransition(int transition) {
-    lock.lock();
-    try {
-      for (; ; ) {
+    for (; ; ) {
+      long waitNanosOutside = -1L;
+
+      lock.lock();
+      try {
         if (finished) {
           return false;
         }
 
-        while (!finished
-            && (!petriNet.isEnabled(transition) || !petriNet.isInTimeWindow(transition))) {
-
+        while (!finished && !petriNet.isEnabled(transition)) {
           if (petriNet.isExpired(transition)) {
             return false;
           }
@@ -102,13 +103,7 @@ public class Monitor implements MonitorInterface {
           queues.enqueue(transition, current);
           logger.logWait(transition);
 
-          if (!petriNet.isEnabled(transition)) {
-            condVar[transition].await();
-          } else {
-            long waitNanos = petriNet.nanosUntilOpen(transition);
-            condVar[transition].awaitNanos(waitNanos);
-          }
-
+          condVar[transition].await();
           queues.remove(transition, current);
 
           if (finished) {
@@ -120,51 +115,66 @@ public class Monitor implements MonitorInterface {
           return false;
         }
 
-        int[] candidates = collectCandidates(transition);
-        int chosen = policy.decide(candidates);
-
-        if (chosen != transition) {
-          Thread current = Thread.currentThread();
-          queues.enqueue(transition, current);
-          logger.logWait(transition);
-
-          if (queues.hasWaiting(chosen)) {
-            queues.dequeue(chosen);
-            condVar[chosen].signal();
-          }
-
-          condVar[transition].await();
-          queues.remove(transition, current);
-
-          if (finished) {
-            return false;
-          }
-
-          continue;
-        }
-
-        int[] markingBefore = petriNet.getMarking().clone();
-        petriNet.fire(transition);
-        validatePlaceInvariants(transition);
-        int[] markingAfter = petriNet.getMarking();
-
-        logger.logFire(transition, markingBefore, markingAfter);
-
-        if (stopCondition != null && stopCondition.recordFire(transition)) {
-          finished = true;
-          signalAllWaitingThreads();
+        if (petriNet.isExpired(transition)) {
           return false;
         }
 
-        wakeEligible();
-        return true;
+        if (!petriNet.isInTimeWindow(transition)) {
+          waitNanosOutside = petriNet.nanosUntilOpen(transition);
+        } else {
+          int[] candidates = collectCandidates(transition);
+          int chosen = policy.decide(candidates);
+
+          if (chosen != transition) {
+            Thread current = Thread.currentThread();
+            queues.enqueue(transition, current);
+            logger.logWait(transition);
+
+            if (queues.hasWaiting(chosen)) {
+              queues.dequeue(chosen);
+              condVar[chosen].signal();
+            }
+
+            condVar[transition].await();
+            queues.remove(transition, current);
+
+            if (finished) {
+              return false;
+            }
+
+            continue;
+          }
+
+          int[] markingBefore = petriNet.getMarking().clone();
+          petriNet.fire(transition);
+          validatePlaceInvariants(transition);
+          int[] markingAfter = petriNet.getMarking();
+
+          logger.logFire(transition, markingBefore, markingAfter);
+
+          if (stopCondition != null && stopCondition.recordFire(transition)) {
+            finished = true;
+            signalAllWaitingThreads();
+            return false;
+          }
+
+          wakeEligible();
+          return true;
+        }
+
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return false;
+      } finally {
+        lock.unlock();
       }
 
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return false;
-    } finally {
-      lock.unlock();
+      if (waitNanosOutside > 0L && waitNanosOutside != Long.MAX_VALUE) {
+        LockSupport.parkNanos(waitNanosOutside);
+        if (Thread.currentThread().isInterrupted()) {
+          return false;
+        }
+      }
     }
   }
 
