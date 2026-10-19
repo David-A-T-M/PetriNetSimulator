@@ -62,6 +62,29 @@ class ProportionPolicyTest {
     }
 
     @Test
+    @DisplayName("long-run distribution matches configured 1:3 ratio")
+    void longRunDistributionMatchesConfiguredRatio() {
+      ProportionPolicy policy =
+          new ProportionPolicy(
+              List.of(new PolicyGroupConfig(new int[] {10, 20}, new int[] {1, 3})));
+
+      int count10 = 0;
+      int count20 = 0;
+
+      for (int i = 0; i < 400; i++) {
+        int chosen = policy.decide(new int[] {10, 20});
+        if (chosen == 10) {
+          count10++;
+        } else if (chosen == 20) {
+          count20++;
+        }
+      }
+
+      assertEquals(100, count10);
+      assertEquals(300, count20);
+    }
+
+    @Test
     @DisplayName("throws when candidate is null")
     void throwsWhenCandidateIsNull() {
       ProportionPolicy policy =

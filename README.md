@@ -73,8 +73,11 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/NetConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/TransitionConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/AgentConfig.java`
+  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PolicyConfig.java`
+  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PolicyGroupConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/LoggingConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/RuntimeConfig.java`
+  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/StopConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PlaceInvariantConfig.java`
 
 ## Requirements
@@ -147,8 +150,8 @@ The simulator is configured via the `SimulationConfig` records. Example:
     { "places": [0, 0, 0, 1, 1, 1, 0, 0, 0], "constant": 2 }
   ],
   "agents": [
-    { "namePrefix": "P", "count": 2, "sequence": [0, 1, 2], "cycles": 10 },
-    { "namePrefix": "C", "count": 2, "sequence": [3, 4, 5], "cycles": 10 }
+    { "namePrefix": "P", "count": 2, "sequence": [0, 1, 2], "cycles": -1 },
+    { "namePrefix": "C", "count": 2, "sequence": [3, 4, 5], "cycles": -1 }
   ],
   "logging": {
     "file": "petri_log.csv",
@@ -166,6 +169,10 @@ The simulator is configured via the `SimulationConfig` records. Example:
         "weights": [1, 1, 1]
       }
     ]
+  },
+  "stop": {
+    "transition": 11,
+    "count": 200
   }
 }
 ```
