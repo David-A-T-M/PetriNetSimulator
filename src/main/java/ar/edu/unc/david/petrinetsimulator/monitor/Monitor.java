@@ -123,7 +123,6 @@ public class Monitor implements MonitorInterface {
 
         int[] markingBefore = petriNet.getMarking().clone();
         petriNet.fire(transition);
-        petriNet.updateSensitizationTimestamps();
         int[] markingAfter = petriNet.getMarking();
 
         logger.logFire(transition, markingBefore, markingAfter);

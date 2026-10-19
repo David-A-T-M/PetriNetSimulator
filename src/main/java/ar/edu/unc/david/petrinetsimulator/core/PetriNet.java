@@ -78,7 +78,7 @@ public class PetriNet {
       marking[p] += a[p];
     }
 
-    updateSensitizationTimestamps();
+    updateSensitizationTimestampsAfterFire(t);
   }
 
   /**
@@ -163,6 +163,26 @@ public class PetriNet {
         }
       } else {
         sensitizationTimestamps[t] = -1;
+      }
+    }
+  }
+
+  /**
+   * Updates the sensitization timestamps after firing a transition.
+   *
+   * <p>The fired transition restarts its temporal window if it remains enabled, so alpha is
+   * enforced before an immediate re-fire.
+   */
+  private void updateSensitizationTimestampsAfterFire(int firedTransition) {
+    long now = System.currentTimeMillis();
+    for (int t = 0; t < matrix.numTransitions(); t++) {
+      if (!isEnabled(t)) {
+        sensitizationTimestamps[t] = -1;
+        continue;
+      }
+
+      if (t == firedTransition || sensitizationTimestamps[t] == -1) {
+        sensitizationTimestamps[t] = now;
       }
     }
   }

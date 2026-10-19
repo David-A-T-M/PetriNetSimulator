@@ -30,6 +30,15 @@ public class PetriNetTest {
     return new PetriNet(initialMarking, matrix, DEFAULT_ALPHA, DEFAULT_BETA);
   }
 
+  private PetriNet createSelfLoopNet(long alpha, long beta) {
+    int[][] pre = {{1}};
+
+    int[][] post = {{1}};
+
+    PetriNetMatrix matrix = new PetriNetMatrix(pre, post);
+    return new PetriNet(new int[] {1}, matrix, new long[] {alpha}, new long[] {beta});
+  }
+
   @Nested
   @DisplayName("Constructor")
   class ConstructorTests {
@@ -478,6 +487,66 @@ public class PetriNetTest {
         net.fire(1);
 
         assertTrue(net.checkPlacesInvariant(invariant, 1));
+      }
+    }
+
+    @Nested
+    @DisplayName("Temporal semantics")
+    class TemporalSemanticsTests {
+
+      @Test
+      @DisplayName("re-fire while still enabled must wait alpha again")
+      void refireWhileStillEnabledMustWaitAlphaAgain() throws InterruptedException {
+        PetriNet net = createSelfLoopNet(80, 10_000L);
+
+        Thread.sleep(95L);
+        assertTrue(net.isInTimeWindow(0));
+
+        net.fire(0);
+
+        assertFalse(net.isInTimeWindow(0));
+        assertTrue(net.nanosUntilOpen(0) > 0);
+
+        Thread.sleep(95L);
+        assertTrue(net.isInTimeWindow(0));
+      }
+
+      @Test
+      @DisplayName("alpha zero allows immediate re-fire when transition remains enabled")
+      void alphaZeroAllowsImmediateRefire() {
+        PetriNet net = createSelfLoopNet(0, 10_000L);
+
+        assertTrue(net.isInTimeWindow(0));
+        net.fire(0);
+        assertTrue(net.isInTimeWindow(0));
+        assertEquals(0, net.nanosUntilOpen(0));
+      }
+
+      @Test
+      @DisplayName("losing and recovering enabled state resets alpha timing")
+      void losingAndRecoveringEnabledStateResetsAlphaTiming() throws InterruptedException {
+        int[][] pre = {{1, 0}, {0, 1}};
+        int[][] post = {{0, 1}, {1, 0}};
+        PetriNet net =
+            new PetriNet(
+                new int[] {1, 0},
+                new PetriNetMatrix(pre, post),
+                new long[] {70, 0L},
+                new long[] {10_000L, 10_000L});
+
+        Thread.sleep(85L);
+        assertTrue(net.isInTimeWindow(0));
+
+        net.fire(0);
+        assertFalse(net.isEnabled(0));
+        assertFalse(net.isInTimeWindow(0));
+
+        net.fire(1);
+        assertTrue(net.isEnabled(0));
+        assertFalse(net.isInTimeWindow(0));
+
+        Thread.sleep(85L);
+        assertTrue(net.isInTimeWindow(0));
       }
     }
 

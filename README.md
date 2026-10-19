@@ -35,6 +35,7 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
 - Transition timing support (`alpha`, `beta`)
 - Concurrent agents with per-agent transition sequences and cycle counts
 - Policy-driven transition selection with `RANDOM` and `PROPORTION` modes
+- Temporal windows with post-fire alpha restart when a transition remains enabled
 - Built-in Java log structure validator (`PetriLogValidator`)
 - External Python verifier for semantic checks (`verifier.py`)
 - Quality gates: JUnit 5, Checkstyle, Spotless, JaCoCo
@@ -180,6 +181,20 @@ The simulator is configured via the `SimulationConfig` records. Example:
 For simple runs, `policy.type` can still be `RANDOM` with an empty or omitted `groups` array. For proportional run, each
 group declares the transitions that compete with one another and the weights assigned to each transition.
 
+### Temporal semantics (`alpha` / `beta`)
+
+- A transition is fireable only while elapsed sensitization time is within `[alpha, beta]`.
+- If a transition is fired and remains enabled, its sensitization timestamp is reset and `alpha` is enforced again
+  before an immediate re-fire.
+- If a transition loses sensitization (becomes disabled), its temporal state is cleared and starts again when it becomes
+  enabled later.
+
+Packaged networks use selective timing:
+
+- `reserve_sys_logic.json`: positive `alpha` only for transitions `1, 4, 5, 8, 9, 10`.
+- `data_proc_logic.json`: positive `alpha` only for transitions `1, 3, 4, 6, 8, 9, 10`.
+- Other transitions use `alpha = 0` (no opening delay) and all keep a large `beta` windows.
+
 ## Logging and Validation
 
 ### Built-in Java validation
@@ -273,6 +288,12 @@ network can end after the expected number of completion events instead of depend
 
 Policy behavior is covered by unit tests for `ProportionPolicy` and by monitor integration tests that exercise policy
 selection while threads are waiting.
+
+Temporal behavior is covered by `PetriNetTest` cases for:
+
+- re-fire while still enabled requiring a fresh `alpha` wait,
+- immediate re-fire when `alpha = 0`,
+- enabled-loss/enabled-recovery resetting temporal eligibility.
 
 ## Known Limitations
 
