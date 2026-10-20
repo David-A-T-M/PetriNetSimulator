@@ -189,6 +189,9 @@ group declares the transitions that compete with one another and the weights ass
   before an immediate re-fire.
 - If a transition loses sensitization (becomes disabled), its temporal state is cleared and starts again when it becomes
   enabled later.
+- If a transition is enabled by tokens but still before `alpha`, the thread waits outside the monitor lock until its
+  time window opens and then retries. Condition-variable queues are used only for logical resource blocking
+  (tokens/policy), not for temporal waiting.
 
 Packaged networks use selective timing:
 
@@ -301,6 +304,9 @@ Temporal behavior is covered by `PetriNetTest` cases for:
 
 Place invariant runtime enforcement is covered by monitor tests for valid invariants, explicit violations, and the
 runtime opt-out flag.
+
+The monitor timing model is covered by integration tests where temporal eligibility and policy competition coexist,
+ensuring time waiting does not occupy monitor condition queues.
 
 ## Known Limitations
 
