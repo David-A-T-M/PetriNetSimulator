@@ -10,4 +10,5 @@ public record SimulationConfig(
     LoggingConfig logging,
     RuntimeConfig runtime,
     PolicyConfig policy,
-    StopConfig stop) {}
+    StopConfig stop,
+    List<TransitionInvariantConfig> transitionInvariants) {}

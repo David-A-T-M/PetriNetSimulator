@@ -18,6 +18,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.StopConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -579,7 +580,8 @@ class ConfigRecordsTest {
                 new RuntimeConfig(10_000, true),
                 new PolicyConfig(
                     "RANDOM", List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1}))),
-                new StopConfig(11, 200));
+                new StopConfig(11, 200),
+                List.of(new TransitionInvariantConfig("simple", new int[] {0, 1, 11})));
 
         assertEquals(2, config.net().pre().length);
         assertEquals(1, config.placeInvariants().size());
@@ -590,12 +592,15 @@ class ConfigRecordsTest {
         assertEquals(1, config.policy().groups().size());
         assertEquals(11, config.stop().transition());
         assertEquals(200, config.stop().count());
+        assertEquals(1, config.transitionInvariants().size());
+        assertEquals("simple", config.transitionInvariants().getFirst().name());
       }
 
       @Test
       @DisplayName("current behavior: allows null sections")
       void allowsNullSectionsCurrently() {
-        SimulationConfig config = new SimulationConfig(null, null, null, null, null, null, null);
+        SimulationConfig config =
+            new SimulationConfig(null, null, null, null, null, null, null, null);
 
         assertNull(config.net());
         assertNull(config.placeInvariants());
@@ -604,6 +609,46 @@ class ConfigRecordsTest {
         assertNull(config.runtime());
         assertNull(config.policy());
         assertNull(config.stop());
+        assertNull(config.transitionInvariants());
+      }
+    }
+
+    @Nested
+    @DisplayName("TransitionInvariantConfig")
+    class TransitionInvariantConfigTests {
+
+      @Test
+      @DisplayName("accepts valid transitions invariant")
+      void acceptsValidTransitionInvariant() {
+        TransitionInvariantConfig config =
+            new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11});
+
+        assertEquals("simple", config.name());
+        assertArrayEquals(new int[] {0, 1, 5, 6, 11}, config.sequence());
+      }
+
+      @Test
+      @DisplayName("rejects blank name")
+      void rejectsBlankName() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new TransitionInvariantConfig("   ", new int[] {0, 1}));
+      }
+
+      @Test
+      @DisplayName("rejects empty sequence")
+      void rejectsEmptySequence() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new TransitionInvariantConfig("simple", new int[] {}));
+      }
+
+      @Test
+      @DisplayName("rejects negative transition in sequence")
+      void rejectsNegativeTransitionInSequence() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new TransitionInvariantConfig("simple", new int[] {0, -1, 1}));
       }
     }
   }

@@ -7,6 +7,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.NetConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.RuntimeConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogValidator;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
 import ar.edu.unc.david.petrinetsimulator.monitor.Monitor;
@@ -118,7 +119,15 @@ public class SimulatorEngine {
 
   /** Validates the log file using the PetriLogValidator and prints any errors found. */
   public static void validateLog(String logFile) {
-    List<String> errors = PetriLogValidator.validateFile(Path.of(logFile));
+    validateLog(logFile, List.of());
+  }
+
+  /**
+   * Validates the log file using structural checks and optional transition-invariant composition.
+   */
+  public static void validateLog(
+      String logFile, List<TransitionInvariantConfig> transitionInvariants) {
+    List<String> errors = PetriLogValidator.validateFile(Path.of(logFile), transitionInvariants);
     if (errors.isEmpty()) {
       System.out.println("[OK] Log is consistent.");
     } else {

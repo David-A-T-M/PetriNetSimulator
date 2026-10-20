@@ -79,6 +79,7 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/LoggingConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/RuntimeConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/StopConfig.java`
+  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/TransitionInvariantConfig.java`
   - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PlaceInvariantConfig.java`
 
 ## Requirements
@@ -175,12 +176,20 @@ The simulator is configured via the `SimulationConfig` records. Example:
   "stop": {
     "transition": 11,
     "count": 200
-  }
+  },
+  "transitionInvariants": [
+    { "name": "simple", "sequence": [0, 1, 5, 6, 11] },
+    { "name": "medium", "sequence": [0, 1, 2, 3, 4, 11] },
+    { "name": "high", "sequence": [0, 1, 7, 8, 9, 10, 11] }
+  ]
 }
 ```
 
 For simple runs, `policy.type` can still be `RANDOM` with an empty or omitted `groups` array. For proportional run, each
 group declares the transitions that compete with one another and the weights assigned to each transition.
+
+`transitionInvariants` defines admissible transition sequences for runtime log validation. The built-in validator checks
+that the fired transition stream can be reduced as a composition of those invariants.
 
 ### Temporal semantics (`alpha` / `beta`)
 
@@ -207,6 +216,9 @@ At the end of `main`, if `runtime.builtInValidation` is `true`, the simulator va
 
 When `runtime.checkPlaceInvariants` is `true` (default), the monitor validates all configured place invariants
 immediately after each successful transition fire and fails fast if one is violated.
+
+When `transitionInvariants` is configured, built-in validation also checks transition-invariant composition over the
+final fire-event stream and reports unmatched residues if composition fails.
 
 ### External Python semantic validation
 

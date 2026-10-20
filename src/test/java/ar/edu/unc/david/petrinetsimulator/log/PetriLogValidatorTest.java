@@ -3,7 +3,9 @@ package ar.edu.unc.david.petrinetsimulator.log;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -93,5 +95,57 @@ public class PetriLogValidatorTest {
 
     assertFalse(errors.isEmpty());
     assertTrue(errors.stream().anyMatch(e -> e.contains("Line 2: invalid entry")));
+  }
+
+  @Test
+  @DisplayName("accepts interleaved sequence when it is a composition of transition invariants")
+  void validateLines_acceptsValidTransitionInvariantComposition() {
+    List<String> lines = linesFromTransitions(0, 0, 1, 1, 5, 2, 6, 3, 4, 11, 11);
+
+    List<TransitionInvariantConfig> invariants =
+        List.of(
+            new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11}),
+            new TransitionInvariantConfig("medium", new int[] {0, 1, 2, 3, 4, 11}));
+    List<String> errors = PetriLogValidator.validateLines(lines, invariants);
+
+    assertTrue(errors.isEmpty());
+  }
+
+  @Test
+  @DisplayName("rejects sequence that cannot be reduced by configured transition invariants")
+  void validateLines_rejectsInvalidTransitionInvariantComposition() {
+    List<String> lines = linesFromTransitions(0, 1, 5, 11);
+
+    List<TransitionInvariantConfig> invariants =
+        List.of(new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11}));
+    List<String> errors = PetriLogValidator.validateLines(lines, invariants);
+
+    assertTrue(
+        errors.stream().anyMatch(e -> e.contains("Transition-invariant composition failed")));
+    assertTrue(
+        errors.stream().anyMatch(e -> e.contains("T0") || e.contains("T1") || e.contains("T5")));
+  }
+
+  @Test
+  @DisplayName("regexFor creates ordered pattern with interleaving captures")
+  void regexFor_createsOrderedPatternWithInterleaving() {
+    Pattern pattern = PetriLogValidator.regexFor(new int[] {0, 1, 5, 6, 11});
+    String stream = "T0 T0 T1 T5 T6 T11 T11";
+
+    assertTrue(pattern.matcher(stream).find());
+  }
+
+  private static List<String> linesFromTransitions(int... transitions) {
+    java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+    lines.add("Timestamp,Thread,Transition,MarkingBefore,MarkingAfter");
+
+    long ts = 1_774_364_518_000L;
+    for (int transition : transitions) {
+      lines.add(ts + ",T-0," + transition + ",\"[1; 0; 0]\",\"[1; 0; 0]\"");
+      ts += 7;
+    }
+
+    lines.add("--- End of simulation: 2026-03-24T10:00:00 ---");
+    return lines;
   }
 }

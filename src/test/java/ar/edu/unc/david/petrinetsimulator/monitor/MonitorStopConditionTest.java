@@ -63,7 +63,8 @@ public class MonitorStopConditionTest {
                     new LoggingConfig(logFile.toString(), false),
                     new RuntimeConfig(5_000, true),
                     new PolicyConfig("RANDOM", List.of()),
-                    new StopConfig(0, 4));
+                    new StopConfig(0, 4),
+                    List.of());
 
             SimulatorEngine.Components components = SimulatorEngine.build(config, logger);
             List<Thread> threads =

@@ -60,7 +60,8 @@ class MonitorPolicyPrecedenceTest {
                     new LoggingConfig(logFile.toString(), false),
                     new RuntimeConfig(5_000, true),
                     new PolicyConfig("RANDOM", List.of()),
-                    new StopConfig(0, 3));
+                    new StopConfig(0, 3),
+                    List.of());
             ScriptedPolicy policy = new ScriptedPolicy(0, 1, 0);
             SimulatorEngine.Components components = SimulatorEngine.build(config, logger, policy);
 
@@ -125,7 +126,8 @@ class MonitorPolicyPrecedenceTest {
                     new PolicyConfig(
                         "PROPORTION",
                         List.of(new PolicyGroupConfig(new int[] {0, 1}, new int[] {1, 1}))),
-                    new StopConfig(0, 3));
+                    new StopConfig(0, 3),
+                    List.of());
 
             SimulatorEngine.Components components = SimulatorEngine.build(config, logger);
 

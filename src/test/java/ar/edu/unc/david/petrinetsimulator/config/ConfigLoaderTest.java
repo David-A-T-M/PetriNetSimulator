@@ -1,6 +1,7 @@
 package ar.edu.unc.david.petrinetsimulator.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -34,6 +35,7 @@ class ConfigLoaderTest {
     assertNotNull(config.logging());
     assertNotNull(config.runtime());
     assertNotNull(config.policy());
+    assertNotNull(config.transitionInvariants());
 
     assertEquals(2, config.net().pre().length);
     assertEquals(2, config.net().post().length);
@@ -43,6 +45,8 @@ class ConfigLoaderTest {
     assertEquals(5000, config.runtime().joinTimeoutMs());
     assertTrue(config.runtime().builtInValidation());
     assertTrue(config.runtime().checkPlaceInvariants());
+    assertEquals(1, config.transitionInvariants().size());
+    assertEquals("simple", config.transitionInvariants().getFirst().name());
     assertNull(config.stop());
   }
 
@@ -64,6 +68,10 @@ class ConfigLoaderTest {
     assertEquals(200, dataProc.stop().count());
     assertTrue(reserveSys.runtime().checkPlaceInvariants());
     assertTrue(dataProc.runtime().checkPlaceInvariants());
+    assertNotNull(reserveSys.transitionInvariants());
+    assertNotNull(dataProc.transitionInvariants());
+    assertFalse(reserveSys.transitionInvariants().isEmpty());
+    assertFalse(dataProc.transitionInvariants().isEmpty());
 
     reserveSys.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
     dataProc.agents().forEach(agent -> assertEquals(-1, agent.cycles()));
@@ -172,7 +180,10 @@ class ConfigLoaderTest {
           },
           "policy": {
             "type": "RANDOM"
-          }
+          },
+          "transitionInvariants": [
+            { "name": "simple", "sequence": [0, 1] }
+          ]
         }
         """;
   }

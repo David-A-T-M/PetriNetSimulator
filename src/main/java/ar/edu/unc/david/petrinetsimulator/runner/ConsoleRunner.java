@@ -35,7 +35,7 @@ public class ConsoleRunner {
     logger.close();
 
     if (c.runtime().builtInValidation()) {
-      SimulatorEngine.validateLog(c.logFile());
+      SimulatorEngine.validateLog(c.logFile(), config.transitionInvariants());
     }
   }
 }
