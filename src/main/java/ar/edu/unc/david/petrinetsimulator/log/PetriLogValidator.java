@@ -4,9 +4,7 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +14,14 @@ import java.util.regex.Pattern;
  */
 public final class PetriLogValidator {
   private PetriLogValidator() {}
+
+  /** Result of reducing a fire stream by configured transition invariants. */
+  public record CompositionAnalysis(
+      Map<String, Integer> invariantCounts, String remainingSequence) {
+    public boolean isValid() {
+      return remainingSequence.isBlank();
+    }
+  }
 
   /** Validates a log file by reading its lines and checking for structural and content errors. */
   public static List<String> validateFile(Path path) {
@@ -105,6 +111,64 @@ public final class PetriLogValidator {
     return errors;
   }
 
+  /** Extracts transition IDs from valid fire lines in the provided log lines. */
+  public static List<Integer> fireTransitionsFromLines(List<String> lines) {
+    List<Integer> transitions = new ArrayList<>();
+    if (lines == null || lines.size() < 2) {
+      return transitions;
+    }
+
+    for (int i = 1; i < lines.size(); i++) {
+      String line = lines.get(i);
+      if (line != null && PetriLogPatterns.FIRE_EVENT.matcher(line).matches()) {
+        transitions.add(parseTransitionId(line));
+      }
+    }
+    return transitions;
+  }
+
+  /** Analyzes transition-invariant composition and counts reduced occurrences per invariant. */
+  public static CompositionAnalysis analyzeComposition(
+      List<Integer> firedTransitions, List<TransitionInvariantConfig> transitionInvariants) {
+    if (transitionInvariants == null || transitionInvariants.isEmpty()) {
+      return new CompositionAnalysis(Map.of(), asTransitionStream(firedTransitions));
+    }
+
+    String current = asTransitionStream(firedTransitions);
+
+    List<TransitionInvariantConfig> orderedInvariants =
+        transitionInvariants.stream()
+            .sorted(
+                Comparator.comparingInt((TransitionInvariantConfig ti) -> ti.sequence().length)
+                    .reversed())
+            .toList();
+
+    Map<String, Integer> counts = new LinkedHashMap<>();
+    for (TransitionInvariantConfig invariant : orderedInvariants) {
+      counts.put(invariant.name(), 0);
+    }
+
+    boolean changed;
+    do {
+      changed = false;
+      for (TransitionInvariantConfig invariant : orderedInvariants) {
+        Pattern pattern = regexFor(invariant.sequence());
+
+        while (true) {
+          String reduced = reduceOne(current, pattern);
+          if (reduced.equals(current)) {
+            break;
+          }
+          current = reduced;
+          counts.put(invariant.name(), counts.get(invariant.name()) + 1);
+          changed = true;
+        }
+      }
+    } while (changed);
+
+    return new CompositionAnalysis(Map.copyOf(counts), current);
+  }
+
   static Pattern regexFor(int[] sequence) {
     if (sequence == null || sequence.length == 0) {
       throw new IllegalArgumentException("Transition sequence cannot be null or empty.");
@@ -119,37 +183,12 @@ public final class PetriLogValidator {
 
   static boolean isComposedByTransitionInvariants(
       List<Integer> firedTransitions, List<TransitionInvariantConfig> transitionInvariants) {
-    return reduceByTransitionInvariants(firedTransitions, transitionInvariants).isBlank();
+    return analyzeComposition(firedTransitions, transitionInvariants).isValid();
   }
 
   static String reduceByTransitionInvariants(
       List<Integer> firedTransitions, List<TransitionInvariantConfig> transitionInvariants) {
-    String current = asTransitionStream(firedTransitions);
-    if (current.isBlank()) {
-      return current;
-    }
-
-    List<TransitionInvariantConfig> orderedInvariants =
-        transitionInvariants.stream()
-            .sorted(
-                Comparator.comparingInt((TransitionInvariantConfig ti) -> ti.sequence().length)
-                    .reversed())
-            .toList();
-
-    boolean changed;
-    do {
-      changed = false;
-      for (TransitionInvariantConfig invariant : orderedInvariants) {
-        Pattern pattern = regexFor(invariant.sequence());
-        String reduced = reduceOne(current, pattern);
-        if (!reduced.equals(current)) {
-          current = reduced;
-          changed = true;
-        }
-      }
-    } while (changed);
-
-    return current;
+    return analyzeComposition(firedTransitions, transitionInvariants).remainingSequence();
   }
 
   private static String reduceOne(String stream, Pattern pattern) {

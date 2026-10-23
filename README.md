@@ -102,10 +102,16 @@ Run simulation with default config (`config.json`):
 ./gradlew run
 ```
 
-Run simulation with a custom config file:
+Run simulation selecting a specific network from `config.json`:
 
 ```bash
-./gradlew run --args="path/to/your-config.json"
+./gradlew run --args="--network data_proc"
+```
+
+Run batch mode (multiple runs with per-run and aggregate CSV statistics):
+
+```bash
+./gradlew run --args="--network data_proc --batch 30"
 ```
 
 ## Configuration (JSON)
@@ -188,6 +194,24 @@ The simulator is configured via the `SimulationConfig` records. Example:
 For simple runs, `policy.type` can still be `RANDOM` with an empty or omitted `groups` array. For proportional run, each
 group declares the transitions that compete with one another and the weights assigned to each transition.
 
+### Policy modes
+
+- `RANDOM`: chooses one enabled competing transition uniformly at random.
+- `PROPORTION`: chooses among competing transitions using configured group weights to bias long-run selection frequencies.
+
+Example:
+
+```json
+{
+  "policy": {
+    "type": "PROPORTION",
+    "groups": [
+      { "transitions": [2, 5, 7], "weights": [1, 1, 1] }
+    ]
+  }
+}
+```
+
 `transitionInvariants` defines admissible transition sequences for runtime log validation. The built-in validator checks
 that the fired transition stream can be reduced as a composition of those invariants.
 
@@ -219,6 +243,27 @@ immediately after each successful transition fire and fails fast if one is viola
 
 When `transitionInvariants` is configured, built-in validation also checks transition-invariant composition over the
 final fire-event stream and reports unmatched residues if composition fails.
+
+### Batch statistics mode
+
+`ConsoleRunner` accepts:
+
+- `--network <id>`: optional, overrides `activeNetworkId` from `config.json`.
+- `--batch <N>`: optional, runs the same network `N` times (`N >= 1`).
+
+Outputs generated in batch mode:
+
+- Per-run event logs: `runs/<network>_<policy>_runNNN.csv`
+- Per-run summary (key/value CSV): `runs/<network>_<policy>_runNNN_summary.csv`
+- Batch table (one row per run): `runs/<network>_<policy>_runs.csv`
+- Batch aggregate (mean/stddev/min/max): `runs/<network>_<policy>_batch_summary.csv`
+
+Per-run summaries include:
+
+- total fires and durations,
+- transition fire counts (`T0`, `T1`, ...),
+- transition-invariant counts and percentages,
+- composition validity and unmatched remainder (if any).
 
 ### External Python semantic validation
 

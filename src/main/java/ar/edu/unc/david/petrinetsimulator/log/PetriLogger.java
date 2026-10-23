@@ -3,6 +3,8 @@ package ar.edu.unc.david.petrinetsimulator.log;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
@@ -22,6 +24,12 @@ public class PetriLogger {
    */
   public PetriLogger(String fileName) {
     try {
+      Path logPath = Path.of(fileName);
+      Path parent = logPath.getParent();
+      if (parent != null) {
+        Files.createDirectories(parent);
+      }
+
       this.writer = new PrintWriter(new FileWriter(fileName, false), true);
 
       writer.println("Timestamp,Thread,Transition,MarkingBefore,MarkingAfter");

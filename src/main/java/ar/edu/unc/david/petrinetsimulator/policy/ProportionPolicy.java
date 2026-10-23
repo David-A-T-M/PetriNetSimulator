@@ -16,6 +16,7 @@ public class ProportionPolicy implements Policy {
   private final List<PolicyGroupConfig> groups;
   private final Map<Integer, Long> selectionCounts = new HashMap<>();
 
+  /** Constructs a ProportionPolicy with the given groups. */
   public ProportionPolicy(List<PolicyGroupConfig> groups) {
     Objects.requireNonNull(groups, "groups cannot be null");
     if (groups.isEmpty()) {

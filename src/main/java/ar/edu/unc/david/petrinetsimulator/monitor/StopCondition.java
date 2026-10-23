@@ -7,6 +7,7 @@ public final class StopCondition {
   private int firedCount;
   private boolean finished;
 
+  /** Creates a stop condition for the given transition and target count. */
   public StopCondition(int transition, int targetCount) {
     if (transition < 0) {
       throw new IllegalArgumentException("Stop transition must be non-negative.");
@@ -18,6 +19,7 @@ public final class StopCondition {
     this.targetCount = targetCount;
   }
 
+  /** Records a fire of the stop transition. Returns true if the stop condition is met. */
   public boolean recordFire(int firedTransition) {
     if (finished || firedTransition != transition) {
       return false;
