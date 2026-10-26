@@ -15,6 +15,7 @@ A configurable **Petri net simulator** in Java, focused on concurrent execution 
 - [Regex Patterns](#regex-patterns)
 - [Testing and Quality](#testing-and-quality)
 - [Known Limitations](#known-limitations)
+- [Documentation](#documentation)
 
 ## Overview
 
@@ -53,34 +54,22 @@ Main entry point: `src/main/java/ar/edu/unc/david/petrinetsimulator/Main.java`
 
 ## Project Structure
 
-- Core model:
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/core/PetriNet.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/core/PetriNetMatrix.java`
-- Concurrency:
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/monitor/Monitor.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/monitor/WaitingQueues.java`
-- Policies:
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/Policy.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/PolicyFactory.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/RandomPolicy.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/policy/ProportionPolicy.java`
-- Logging:
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/log/PetriLogger.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/log/PetriLogPatterns.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/log/PetriLogValidator.java`
-- Config:
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/ConfigLoader.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/SimulationConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/NetConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/TransitionConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/AgentConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PolicyConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PolicyGroupConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/LoggingConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/RuntimeConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/StopConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/TransitionInvariantConfig.java`
-  - `src/main/java/ar/edu/unc/david/petrinetsimulator/config/PlaceInvariantConfig.java`
+All paths are relative to `src/main/java/ar/edu/unc/david/petrinetsimulator/`:
+
+- Entry points: `Main.java`, `runner/ConsoleRunner.java` (console and `--batch` mode)
+- Core model: `core/PetriNet.java`, `core/PetriNetMatrix.java`, `core/SimulatorEngine.java`
+- Concurrency: `monitor/Monitor.java`, `monitor/WaitingQueues.java`, `monitor/StopCondition.java`, `agent/PetriAgent.java`
+- Policies: `policy/Policy.java`, `policy/PolicyFactory.java`, `policy/RandomPolicy.java`, `policy/ProportionPolicy.java`
+- Logging and validation: `log/PetriLogger.java`, `log/PetriLogPatterns.java`, `log/PetriLogValidator.java`
+- Run statistics: `runner/RunStatistics.java`, `runner/RunStatisticsAnalyzer.java`, `runner/RunStatisticsCsvWriter.java`
+- Config loading: `config/ConfigLoader.java`
+- Config records:
+  - `config/main/`: `MainConfig`, `NetworkEntry`
+  - `config/logic/`: `SimulationConfig`, `NetConfig`, `TransitionConfig`, `AgentConfig`, `PolicyConfig`, `PolicyGroupConfig`, `StopConfig`, `LoggingConfig`, `RuntimeConfig`, `PlaceInvariantConfig`, `TransitionInvariantConfig`
+  - `config/layout/`: layout records used only by the UI
+- JavaFX UI (optional): `ui/`, `ui/javafx/PetriSimApp.java`, `ui/nodes/`, `ui/monitor/`
+- Packaged networks: `src/main/resources/{prod_cons,reserve_sys,data_proc}_{logic,layout}.json` (`reserve_sys` is the 2024 assignment, `data_proc` the 2025 one)
+- PIPE exports of the 2024/2025 networks: `docs/net_2024.xml`, `docs/net_2025.xml`
 
 ## Requirements
 
@@ -171,35 +160,36 @@ The simulator is configured via the `SimulationConfig` records. Example:
     "checkPlaceInvariants": true
   },
   "policy": {
-    "type": "PROPORTION",
-    "groups": [
-      {
-        "transitions": [2, 5, 7],
-        "weights": [1, 1, 1]
-      }
-    ]
+    "type": "RANDOM"
   },
   "stop": {
-    "transition": 11,
-    "count": 200
+    "transition": 5,
+    "count": 50
   },
   "transitionInvariants": [
-    { "name": "simple", "sequence": [0, 1, 5, 6, 11] },
-    { "name": "medium", "sequence": [0, 1, 2, 3, 4, 11] },
-    { "name": "high", "sequence": [0, 1, 7, 8, 9, 10, 11] }
+    { "name": "producer", "sequence": [0, 1, 2] },
+    { "name": "consumer", "sequence": [3, 4, 5] }
   ]
 }
 ```
 
-For simple runs, `policy.type` can still be `RANDOM` with an empty or omitted `groups` array. For proportional run, each
-group declares the transitions that compete with one another and the weights assigned to each transition.
+This example is the small producer-consumer net (`prod_cons_logic.json`); the TP networks are in `reserve_sys_logic.json` (2024) and `data_proc_logic.json` (2025).
+
+Blocks beyond `net` and `agents`:
+
+- `stop`: ends the run once `transition` has fired `count` times (the run is then complete; agents with `cycles: -1` loop until then). Without it, the run ends when the agents finish their cycles or when `runtime.joinTimeoutMs` expires.
+- `agents[].cycles`: positive for a finite number of cycles, negative for infinite (zero is rejected).
+- `agents[].count`: number of threads for that segment.
+- `runtime.joinTimeoutMs`: safety net only; set it well above the expected duration of a full run.
+
+For `RANDOM`, `groups` is ignored. For proportional runs, each group declares the transitions that compete with one another and the weight assigned to each transition.
 
 ### Policy modes
 
 - `RANDOM`: chooses one enabled competing transition uniformly at random.
 - `PROPORTION`: chooses among competing transitions using configured group weights to bias long-run selection frequencies.
 
-Example:
+Example for `data_proc` (the three processing modes compete for the buffer P3; T5 is the simple mode). The weights bias the long-run share of each transition:
 
 ```json
 {
@@ -212,39 +202,47 @@ Example:
 }
 ```
 
-`transitionInvariants` defines admissible transition sequences for runtime log validation. The built-in validator checks
-that the fired transition stream can be reduced as a composition of those invariants.
+Example for `reserve_sys` (two independent conflicts: upper/lower agent and confirm/cancel):
+
+```json
+{
+  "policy": {
+    "type": "PROPORTION",
+    "groups": [
+      { "transitions": [2, 3], "weights": [1, 1] },
+      { "transitions": [6, 7], "weights": [1, 1] }
+    ]
+  }
+}
+```
+
+Note: the policy results should be checked against the real fire counts of each run (see [Known Limitations](#known-limitations)).
+`transitionInvariants` defines admissible transition sequences for runtime log validation. The built-in validator checks that the fired transition stream can be reduced as a composition of those invariants.
 
 ### Temporal semantics (`alpha` / `beta`)
 
 - A transition is fireable only while elapsed sensitization time is within `[alpha, beta]`.
-- If a transition is fired and remains enabled, its sensitization timestamp is reset and `alpha` is enforced again
-  before an immediate re-fire.
-- If a transition loses sensitization (becomes disabled), its temporal state is cleared and starts again when it becomes
-  enabled later.
-- If a transition is enabled by tokens but still before `alpha`, the thread waits outside the monitor lock until its
-  time window opens and then retries. Condition-variable queues are used only for logical resource blocking
-  (tokens/policy), not for temporal waiting.
+- If a transition is fired and remains enabled, its sensitization timestamp is reset and `alpha` is enforced again before an immediate re-fire.
+- If a transition loses sensitization (becomes disabled), its temporal state is cleared and starts again when it becomes enabled later.
+- If a transition is enabled by tokens but still before `alpha`, the thread waits outside the monitor lock until its time window opens and then retries. Condition-variable queues are used only for logical resource blocking (tokens/policy), not for temporal waiting.
 
 Packaged networks use selective timing:
 
 - `reserve_sys_logic.json`: positive `alpha` only for transitions `1, 4, 5, 8, 9, 10`.
 - `data_proc_logic.json`: positive `alpha` only for transitions `1, 3, 4, 6, 8, 9, 10`.
-- Other transitions use `alpha = 0` (no opening delay) and all keep a large `beta` windows.
+- Other transitions use `alpha = 0` (no opening delay), and all keep large `beta` windows.
 
 ## Logging and Validation
 
 ### Built-in Java validation
 
-At the end of `main`, if `runtime.builtInValidation` is `true`, the simulator validates log structure using `PetriLogValidator`.
+After each run, if `runtime.builtInValidation` is `true`, the simulator validates log structure using `PetriLogValidator`.
 
-When `runtime.checkPlaceInvariants` is `true` (default), the monitor validates all configured place invariants
-immediately after each successful transition fire and fails fast if one is violated.
+When `runtime.checkPlaceInvariants` is `true` (default), the monitor validates all configured place invariants immediately after each successful transition fire. A violation throws an `IllegalStateException` in the thread that fired (the run is not yet aborted as a whole; see [Known Limitations](#known-limitations)).
 
-When `transitionInvariants` is configured, built-in validation also checks transition-invariant composition over the
-final fire-event stream and reports unmatched residues if composition fails.
+When `transitionInvariants` is configured, built-in validation also checks transition-invariant composition over the final fire-event stream and reports unmatched residues if composition fails.
 
-### Batch statistics mode
+### Batch statistics mode (Phase 7)
 
 `ConsoleRunner` accepts:
 
@@ -260,10 +258,12 @@ Outputs generated in batch mode:
 
 Per-run summaries include:
 
-- total fires and durations,
+- total fires and duration,
 - transition fire counts (`T0`, `T1`, ...),
 - transition-invariant counts and percentages,
 - composition validity and unmatched remainder (if any).
+
+Note: in batch mode, built-in validation checks log structure only. Full transition-invariant composition validation remains enabled for single-run mode.
 
 ### External Python semantic validation
 
@@ -276,19 +276,19 @@ Per-run summaries include:
 
 Default files:
 
-- Config: `config.json`
+- Config: `config.json` (**no longer valid as a default**: it is now the network index and has no `net` block, so the verifier fails with `'net' object is required`; always pass a network logic JSON)
 - Log: `petri_log.csv`
 
-Run with defaults:
+Run against a packaged network:
 
 ```bash
-python3 verifier.py
+python3 verifier.py --config src/main/resources/data_proc_logic.json --log petri_log.csv
 ```
 
-Run with custom files:
+Run against a batch log:
 
 ```bash
-python3 verifier.py --config path/to/config.json --log path/to/petri_log.csv
+python3 verifier.py --config src/main/resources/reserve_sys_logic.json --log runs/reserve_sys_random_run001.csv
 ```
 
 ## Regex Patterns
@@ -313,6 +313,14 @@ Regex definitions are centralized in `src/main/java/ar/edu/unc/david/petrinetsim
 ^--- End of simulation: .+ ---$
 ```
 
+- Transition invariants: `PetriLogValidator.regexFor(sequence)` builds one pattern per invariant from its `sequence` in the JSON (for example `[0, 1, 5, 6, 11]`), with lazy captures for the transitions of other invariants interleaved in between:
+
+```regex
+(?s)\bT0\b\s*(.*?)\bT1\b\s*(.*?)\bT5\b\s*(.*?)\bT6\b\s*(.*?)\bT11\b\s*
+```
+
+The validator turns the fired transitions into a stream (`T0 T1 T0 ...`) and removes matches repeatedly, keeping the captured interleaving, until nothing matches; the log is a valid composition when the stream ends empty.
+
 ## Testing and Quality
 
 Run the full quality pipeline:
@@ -332,26 +340,23 @@ Auto-format Java code:
 
 Reports are generated under `build/reports/`.
 
-## Validation artifacts
+### Validation artifacts
 
-The repository includes PIPE exports in `docs/` that can be used to validate the structural definition of the packaged
-networks against their JSON counterparts in `src/main/resources/`.
+The repository includes PIPE exports in `docs/` that can be used to validate the structural definition of the packaged networks against their JSON counterparts in `src/main/resources/`.
 
 Current validation checks cover:
 
-- `pre` and `post` matrices.
-- the initial marking.
-- the place and transition counts implied by the export.
-- the optional global stop configuration used by the packaged networks.
-- open-ended agent execution via negative cycle counts.
+- `pre` and `post` matrices
+- the initial marking
+- the place and transition counts implied by the export
+- the optional global stop configuration used by the packaged networks
+- open-ended agent execution via negative cycle counts
 
 This validation is structural only. It does not execute the simulator.
 
-The packaged JSON network files also include the runtime stop configuration used by the console runner, so a configured
-network can end after the expected number of completion events instead of depending only on per-agent cycle limits.
+The packaged JSON network files also include the runtime stop configuration used by the console runner, so a configured network can end after the expected number of completion events instead of depending only on per-agent cycle limits.
 
-Policy behavior is covered by unit tests for `ProportionPolicy` and by monitor integration tests that exercise policy
-selection while threads are waiting.
+Policy behavior is covered by unit tests for `ProportionPolicy` and by monitor integration tests that exercise policy selection while threads are waiting.
 
 Temporal behavior is covered by `PetriNetTest` cases for:
 
@@ -359,16 +364,24 @@ Temporal behavior is covered by `PetriNetTest` cases for:
 - immediate re-fire when `alpha = 0`,
 - enabled-loss/enabled-recovery resetting temporal eligibility.
 
-Place invariant runtime enforcement is covered by monitor tests for valid invariants, explicit violations, and the
-runtime opt-out flag.
+Place invariant runtime enforcement is covered by monitor tests for valid invariants, explicit violations, and the runtime opt-out flag.
 
-The monitor timing model is covered by integration tests where temporal eligibility and policy competition coexist,
-ensuring time waiting does not occupy monitor condition queues.
+The monitor timing model is covered by integration tests where temporal eligibility and policy competition coexist, ensuring time waiting does not occupy monitor condition queues.
 
 ## Known Limitations
 
-- The policy groups are still declared manually in the network JSON files; the monitor does not infer them automatically
-  from the matrices.
-- Built-in Java validation checks log structure; deeper semantic validation is handled by `verifier.py`.
+- **Policy fidelity.** `ProportionPolicy.decide` updates its counters on every call, and the monitor can call it more than once per fire, and the thread that just fired is not a candidate in the next decision. Observed shares may not match the configured weights, and a thread count larger than one for a segment biases the result.
+- **Runs may end by timeout.** `runtime.joinTimeoutMs` is only a safety net; with the packaged `data_proc` timings (`alpha = 500`) a 200-invariant run takes far longer than 10 s, and the runner does not yet report whether the `stop` condition was reached. Tune the timings and the timeout before taking measurements.
+- **Transition-invariant composition.** Invariants that share a prefix (all of them start with `T0 T1`) can make the regex reduction fail on a valid log, and a run that stops at the Nth completion leaves in-flight instances in the log. The per-invariant percentages in the summaries should be read from the fire counts of the distinguishing transitions until this is fixed.
+- A place-invariant violation throws in the firing thread but does not abort the whole run.
+- The policy groups are declared manually in the network JSON files; the monitor does not infer them from the matrices.
+- `verifier.py` needs an explicit `--config <network logic json>` (see above).
+- `petri_log.csv` and `runs/` are not in `.gitignore`.
 - Timing behavior depends on scheduling and monitor contention in concurrent runs.
 
+## Documentation
+
+- `docs/reference/ThreadCalc.java`: reference implementation of the thread-count algorithms (run with `java`, not part of the Gradle build).
+- `docs/Enunciado TP Final Concurrente 2024.pdf` / `2025.pdf`: the assignments.
+- `docs/Algoritmos_cantidad_responsabilidad_hilos_..._FINAL.pdf`: thread-count algorithms used for the thread analysis.
+- `docs/net_2024.xml`, `docs/net_2025.xml`: PIPE exports of the two networks.

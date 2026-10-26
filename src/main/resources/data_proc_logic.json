@@ -31,16 +31,16 @@
     "initialMarking": [3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
     "transitions": [
       { "id": 0, "alpha": 0, "beta": 999999 },
-      { "id": 1, "alpha": 500, "beta": 999999 },
+      { "id": 1, "alpha": 75, "beta": 999999 },
       { "id": 2, "alpha": 0, "beta": 999999 },
-      { "id": 3, "alpha": 500, "beta": 999999 },
-      { "id": 4, "alpha": 500, "beta": 999999 },
+      { "id": 3, "alpha": 75, "beta": 999999 },
+      { "id": 4, "alpha": 75, "beta": 999999 },
       { "id": 5, "alpha": 0, "beta": 999999 },
-      { "id": 6, "alpha": 500, "beta": 999999 },
+      { "id": 6, "alpha": 75, "beta": 999999 },
       { "id": 7, "alpha": 0, "beta": 999999 },
-      { "id": 8, "alpha": 500, "beta": 999999 },
-      { "id": 9, "alpha": 500, "beta": 999999 },
-      { "id": 10, "alpha": 500, "beta": 999999 },
+      { "id": 8, "alpha": 75, "beta": 999999 },
+      { "id": 9, "alpha": 75, "beta": 999999 },
+      { "id": 10, "alpha": 75, "beta": 999999 },
       { "id": 11, "alpha": 0, "beta": 999999 }
     ]
   },
@@ -75,21 +75,21 @@
     },
     {
       "namePrefix": "M",
-      "count": 4,
+      "count": 2,
       "sequence": [2, 3, 4],
       "cycles": -1,
       "color": "BLUE"
     },
     {
       "namePrefix": "L",
-      "count": 1,
+      "count": 2,
       "sequence": [5, 6],
       "cycles": -1,
       "color": "GREEN"
     },
     {
       "namePrefix": "H",
-      "count": 1,
+      "count": 2,
       "sequence": [7, 8, 9, 10],
       "cycles": -1,
       "color": "RED"
@@ -100,7 +100,7 @@
     "logWaitWake": false
   },
   "runtime": {
-    "joinTimeoutMs": 10000,
+    "joinTimeoutMs": 120000,
     "builtInValidation": true
   },
   "policy": {

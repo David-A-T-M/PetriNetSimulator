@@ -79,14 +79,14 @@
   "agents": [
     {
       "namePrefix": "S",
-      "count": 2,
+      "count": 5,
       "sequence": [0, 1],
       "cycles": -1,
       "color": "BLACK"
     },
     {
       "namePrefix": "E",
-      "count": 2,
+      "count": 5,
       "sequence": [11],
       "cycles": -1,
       "color": "PURPLE"
@@ -125,7 +125,7 @@
     "logWaitWake": false
   },
   "runtime": {
-    "joinTimeoutMs": 10000,
+    "joinTimeoutMs": 120000,
     "builtInValidation": true
   },
   "policy": {
