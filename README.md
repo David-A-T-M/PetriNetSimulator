@@ -109,6 +109,13 @@ Run batch mode (multiple runs with per-run and aggregate CSV statistics):
 ./gradlew run --args="--network data_proc --batch 30"
 ```
 
+Summarize batch runs with group percentages (standard library only):
+
+```bash
+python tools/summarize_runs.py runs/data_prox_random_runs.csv --group modo=T2,T5,T7
+python tools/summarize_runs.py runs/reserve_sys_priority_runs.csv --group agente=T2,T3 --group resultado=T6,T7
+```
+
 ## Configuration (JSON)
 
 The simulator is configured via the `SimulationConfig` records. Example:
@@ -277,6 +284,7 @@ Outputs generated in batch mode:
 - Per-run summary (key/value CSV): `runs/<network>_<policy>_runNNN_summary.csv`
 - Batch table (one row per run): `runs/<network>_<policy>_runs.csv`
 - Batch aggregate (mean/stddev/min/max): `runs/<network>_<policy>_batch_summary.csv`
+- Optional post-processing summary (script): `tools/summarize_runs.py`
 
 Per-run summaries include:
 
