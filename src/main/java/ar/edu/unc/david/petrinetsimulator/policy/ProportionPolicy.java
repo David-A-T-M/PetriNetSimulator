@@ -32,9 +32,12 @@ public class ProportionPolicy implements Policy {
       throw new IllegalArgumentException("No candidates to choose from");
     }
 
-    int chosen = chooseBestCandidate(candidates);
-    selectionCounts.merge(chosen, 1L, Long::sum);
-    return chosen;
+    return chooseBestCandidate(candidates);
+  }
+
+  @Override
+  public synchronized void onFired(int transition) {
+    selectionCounts.merge(transition, 1L, Long::sum);
   }
 
   private int chooseBestCandidate(int[] candidates) {

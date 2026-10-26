@@ -151,6 +151,7 @@ public class Monitor implements MonitorInterface {
 
           int[] markingBefore = petriNet.getMarking().clone();
           petriNet.fire(transition);
+          policy.onFired(transition);
           validatePlaceInvariants(transition);
           int[] markingAfter = petriNet.getMarking();
 

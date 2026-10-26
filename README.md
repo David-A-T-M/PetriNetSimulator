@@ -337,16 +337,17 @@ Regex definitions are centralized in `src/main/java/ar/edu/unc/david/petrinetsim
 ^--- End of simulation: .+ ---$
 ```
 
-- Transition invariants: `PetriLogValidator.regexFor(sequence)` builds one pattern per invariant from its `sequence` in
-  the JSON (for example `[0, 1, 5, 6, 11]`), with lazy captures for the transitions of other invariants interleaved in
-  between:
+- Transition invariants: `PetriLogValidator.endAnchoredRegexFor(sequence)` builds one pattern per invariant from its
+  `sequence` in the JSON (for example `[0, 1, 5, 6, 11]`), anchored to the end of the examined prefix and with greedy
+  captures for interleaved tokens:
 
 ```regex
-(?s)\bT0\b\s*(.*?)\bT1\b\s*(.*?)\bT5\b\s*(.*?)\bT6\b\s*(.*?)\bT11\b\s*
+(?s)^(.*)\bT0\b(.*)\bT1\b(.*)\bT5\b(.*)\bT6\b(.*)\bT11\b\s*$
 ```
 
-The validator turns the fired transitions into a stream (`T0 T1 T0 ...`) and removes matches repeatedly, keeping the
-captured interleaving, until nothing matches; the log is a valid composition when the stream ends empty.
+The validator is reduced by completion order: it takes the earliest token that could close an invariant, matches only
+invariants that end in that transition against the current prefix, then replaces the matched prefix with captured
+interleaving plus the untouched suffix. The log is a valid composition when no residue remains.
 
 ## Testing and Quality
 
@@ -408,10 +409,9 @@ ensuring time waiting does not occupy monitor condition queues.
 - **Runs may end by timeout.** `runtime.joinTimeoutMs` is only a safety net; with the packaged `data_proc` timings
   (`alpha = 500`) a 200-invariant run takes far longer than 10 s, and the runner does not yet report whether the `stop`
   condition was reached. Tune the timings and the timeout before taking measurements.
-- **Transition-invariant composition.** Invariants that share a prefix (all of them start with `T0 T1`) can make the
-  regex reduction fail on a valid log, and a run that stops at the Nth completion leaves in-flight instances in the log.
-  The per-invariant percentages in the summaries should be read from the fire counts of the distinguishing transitions
-  until this is fixed.
+- **Transition-invariant per-type percentages on `reserve_sys`.** Composition validation is now stable for shared
+  prefixes, but per-invariant counts in the 2024 network remain ambiguous because all invariants share transitions. For
+  that network, use transition fire counts (`T2/T3` and `T6/T7`) for per-type metrics.
 - A place-invariant violation throws in the firing thread but does not abort the whole run.
 - The policy groups are declared manually in the network JSON files; the monitor does not infer them from the matrices.
 - `verifier.py` needs an explicit `--config <network logic json>` (see above).

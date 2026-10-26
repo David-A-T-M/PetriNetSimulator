@@ -1,11 +1,15 @@
 package ar.edu.unc.david.petrinetsimulator.log;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -106,6 +110,7 @@ public class PetriLogValidatorTest {
         List.of(
             new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11}),
             new TransitionInvariantConfig("medium", new int[] {0, 1, 2, 3, 4, 11}));
+
     List<String> errors = PetriLogValidator.validateLines(lines, invariants);
 
     assertTrue(errors.isEmpty());
@@ -118,6 +123,7 @@ public class PetriLogValidatorTest {
 
     List<TransitionInvariantConfig> invariants =
         List.of(new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11}));
+
     List<String> errors = PetriLogValidator.validateLines(lines, invariants);
 
     assertTrue(
@@ -128,11 +134,135 @@ public class PetriLogValidatorTest {
 
   @Test
   @DisplayName("regexFor creates ordered pattern with interleaving captures")
-  void regexFor_createsOrderedPatternWithInterleaving() {
-    Pattern pattern = PetriLogValidator.regexFor(new int[] {0, 1, 5, 6, 11});
+  void regexFor_createsOrderedPatternWithInterleavings() {
+    var pattern = PetriLogValidator.regexFor(new int[] {0, 1, 5, 6, 11});
     String stream = "T0 T0 T1 T5 T6 T11 T11";
 
     assertTrue(pattern.matcher(stream).find());
+  }
+
+  @Test
+  @DisplayName("accepts shared-prefix sequence by reducing in completion order")
+  void analyzeComposition_acceptsSharedPrefixByCompletionOrder() {
+    List<Integer> fired = List.of(0, 1, 5, 6, 11, 0, 1, 2, 3, 4, 11);
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        PetriLogValidator.analyzeComposition(fired, dataProcInvariants());
+
+    assertTrue(analysis.isValid());
+    assertEquals(1, analysis.invariantCounts().get("simple"));
+    assertEquals(1, analysis.invariantCounts().get("medium"));
+    assertEquals(0, analysis.invariantCounts().get("high"));
+  }
+
+  @Test
+  @DisplayName("accepts interleaved shared-prefix instances")
+  void analyzeComposition_acceptsInterleavedSharedPrefixInstances() {
+    List<Integer> fired = List.of(0, 1, 0, 1, 5, 2, 6, 3, 4, 11, 11);
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        PetriLogValidator.analyzeComposition(fired, dataProcInvariants());
+
+    assertTrue(analysis.isValid());
+    assertEquals(1, analysis.invariantCounts().get("simple"));
+    assertEquals(1, analysis.invariantCounts().get("medium"));
+    assertEquals(0, analysis.invariantCounts().get("high"));
+  }
+
+  @Test
+  @DisplayName("rejects incomplete medium invariant and keeps expected residue")
+  void analyzeComposition_rejectsIncompleteMediumInvariant() {
+    List<Integer> fired = List.of(0, 1, 2, 3, 11);
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        PetriLogValidator.analyzeComposition(fired, dataProcInvariants());
+
+    assertFalse(analysis.isValid());
+    assertEquals("T0 T1 T2 T3", analysis.remainingSequence());
+  }
+
+  @Test
+  @DisplayName("rejects dangling shared prefix residue")
+  void analyzeComposition_rejectsDanglingPrefix() {
+    List<Integer> fired = List.of(0, 1, 5, 6, 11, 0, 1);
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        PetriLogValidator.analyzeComposition(fired, dataProcInvariants());
+
+    assertFalse(analysis.isValid());
+    assertEquals("T0 T1", analysis.remainingSequence());
+  }
+
+  @Test
+  @DisplayName("accepts interleaved reserve_sys invariants")
+  void analyzeComposition_acceptsReserveSysInterleaving() {
+    List<Integer> fired = List.of(0, 1, 0, 1, 2, 3, 5, 4, 6, 7, 9, 8, 10, 11, 11);
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        PetriLogValidator.analyzeComposition(fired, reserveSysInvariants());
+
+    assertTrue(analysis.isValid());
+    assertEquals(1, analysis.invariantCounts().get("upper_confirm"));
+    assertEquals(1, analysis.invariantCounts().get("lower_cancel"));
+  }
+
+  @Test
+  @DisplayName("reduces 200 interleaved invariants in under one second")
+  void analyzeComposition_reducesLargeInterleavingUnderOneSecond() {
+    List<int[]> templates =
+        List.of(
+            new int[] {0, 1, 5, 6, 11},
+            new int[] {0, 1, 2, 3, 4, 11},
+            new int[] {0, 1, 7, 8, 9, 10, 11});
+    List<int[]> instances = new ArrayList<>();
+    for (int i = 0; i < 200; i++) {
+      instances.add(templates.get(i % templates.size()));
+    }
+
+    List<Integer> fired = new ArrayList<>();
+    int maxLen = instances.stream().mapToInt(seq -> seq.length).max().orElse(0);
+    for (int step = 0; step < maxLen; step++) {
+      for (int[] sequence : instances) {
+        if (step < sequence.length) {
+          fired.add(sequence[step]);
+        }
+      }
+    }
+
+    PetriLogValidator.CompositionAnalysis analysis =
+        assertTimeoutPreemptively(
+            Duration.ofSeconds(1),
+            () -> PetriLogValidator.analyzeComposition(fired, dataProcInvariants()));
+
+    assertNotNull(analysis);
+    assertTrue(analysis.isValid());
+    int totalReduced =
+        analysis.invariantCounts().values().stream().mapToInt(Integer::intValue).sum();
+    assertEquals(200, totalReduced);
+  }
+
+  @Test
+  @DisplayName("endAnchoredRegexFor anchors matching at the prefix end")
+  void endAnchoredRegexFor_matchesOnlyWhenSequenceEndsPrefix() {
+    var pattern = PetriLogValidator.endAnchoredRegexFor(new int[] {0, 1, 5, 6, 11});
+
+    assertTrue(pattern.matcher("T0 T1 T5 T6 T11").matches());
+    assertFalse(pattern.matcher("T0 T1 T5 T6 T11 T2").matches());
+  }
+
+  private static List<TransitionInvariantConfig> dataProcInvariants() {
+    return List.of(
+        new TransitionInvariantConfig("simple", new int[] {0, 1, 5, 6, 11}),
+        new TransitionInvariantConfig("medium", new int[] {0, 1, 2, 3, 4, 11}),
+        new TransitionInvariantConfig("high", new int[] {0, 1, 7, 8, 9, 10, 11}));
+  }
+
+  private static List<TransitionInvariantConfig> reserveSysInvariants() {
+    return List.of(
+        new TransitionInvariantConfig("upper_confirm", new int[] {0, 1, 2, 5, 6, 9, 10, 11}),
+        new TransitionInvariantConfig("upper_cancel", new int[] {0, 1, 2, 5, 7, 8, 11}),
+        new TransitionInvariantConfig("lower_confirm", new int[] {0, 1, 3, 4, 6, 9, 10, 11}),
+        new TransitionInvariantConfig("lower_cancel", new int[] {0, 1, 3, 4, 7, 8, 11}));
   }
 
   private static List<String> linesFromTransitions(int... transitions) {

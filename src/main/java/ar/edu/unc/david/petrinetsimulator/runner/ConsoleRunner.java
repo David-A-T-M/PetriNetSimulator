@@ -45,12 +45,16 @@ public class ConsoleRunner {
     int batchRuns = Math.max(1, options.batchRuns());
     boolean batchMode = batchRuns > 1;
     List<RunStatistics> allRunStats = new ArrayList<>();
+    boolean hasFailures = false;
 
     for (int runIndex = 1; runIndex <= batchRuns; runIndex++) {
       String logFile = resolveRunLogFile(baseConfig, net.id(), policyType, runIndex, batchMode);
       SimulationConfig runConfig = withLogFile(baseConfig, logFile);
 
-      runOne(runConfig, batchMode);
+      boolean runSucceded = runOne(runConfig);
+      if (!runSucceded) {
+        hasFailures = true;
+      }
 
       RunStatistics runStats =
           RunStatisticsAnalyzer.analyze(
@@ -72,9 +76,13 @@ public class ConsoleRunner {
       RunStatisticsCsvWriter.writeBatchAggregate(
           runsDir.resolve(prefix + "_batch_summary.csv"), allRunStats);
     }
+
+    if (hasFailures) {
+      System.exit(1);
+    }
   }
 
-  private static void runOne(SimulationConfig config, boolean batchMode) {
+  private static boolean runOne(SimulationConfig config) {
     PetriLogger logger = new PetriLogger(SimulatorEngine.resolveLogFile(config.logging()));
     SimulatorEngine.Components c = SimulatorEngine.build(config, logger);
 
@@ -83,13 +91,20 @@ public class ConsoleRunner {
 
     logger.close();
 
-    if (c.runtime().builtInValidation()) {
-      if (batchMode) {
-        SimulatorEngine.validateLog(c.logFile());
-      } else {
-        SimulatorEngine.validateLog(c.logFile(), config.transitionInvariants());
-      }
+    boolean stopReached = c.stopCondition() == null || c.stopCondition().isReached();
+    if (stopReached) {
+      System.out.println("[OK] Stop condition reached.");
+    } else {
+      System.out.println(
+          "[WARN] Stop condition NOT reached before joinTimeoutMs;"
+              + " the run was cut by the timeout.");
     }
+
+    if (c.runtime().builtInValidation()) {
+      SimulatorEngine.validateLog(c.logFile(), config.transitionInvariants());
+    }
+
+    return stopReached;
   }
 
   private static String resolveRunLogFile(

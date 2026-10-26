@@ -4,8 +4,13 @@ import ar.edu.unc.david.petrinetsimulator.config.logic.TransitionInvariantConfig
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -14,6 +19,8 @@ import java.util.regex.Pattern;
  */
 public final class PetriLogValidator {
   private PetriLogValidator() {}
+
+  private record CompiledInvariant(String name, int[] sequence, int lastTransition) {}
 
   /** Result of reducing a fire stream by configured transition invariants. */
   public record CompositionAnalysis(
@@ -124,6 +131,7 @@ public final class PetriLogValidator {
         transitions.add(parseTransitionId(line));
       }
     }
+
     return transitions;
   }
 
@@ -134,39 +142,61 @@ public final class PetriLogValidator {
       return new CompositionAnalysis(Map.of(), asTransitionStream(firedTransitions));
     }
 
-    String current = asTransitionStream(firedTransitions);
-
-    List<TransitionInvariantConfig> orderedInvariants =
-        transitionInvariants.stream()
-            .sorted(
-                Comparator.comparingInt((TransitionInvariantConfig ti) -> ti.sequence().length)
-                    .reversed())
-            .toList();
+    List<Integer> remainingTokens = new ArrayList<>(firedTransitions);
+    Set<Integer> lastTransitions = new HashSet<>();
+    List<CompiledInvariant> invariants = new ArrayList<>(transitionInvariants.size());
 
     Map<String, Integer> counts = new LinkedHashMap<>();
-    for (TransitionInvariantConfig invariant : orderedInvariants) {
+    for (TransitionInvariantConfig invariant : transitionInvariants) {
+      if (invariant.sequence() == null || invariant.sequence().length == 0) {
+        throw new IllegalArgumentException(
+            "Transition-invariant sequence cannot be null or empty.");
+      }
+
+      int[] sequence = invariant.sequence();
+      int lastTransition = sequence[sequence.length - 1];
+      invariants.add(
+          new CompiledInvariant(
+              invariant.name(), Arrays.copyOf(sequence, sequence.length), lastTransition));
       counts.put(invariant.name(), 0);
+      lastTransitions.add(lastTransition);
     }
 
-    boolean changed;
-    do {
-      changed = false;
-      for (TransitionInvariantConfig invariant : orderedInvariants) {
-        Pattern pattern = regexFor(invariant.sequence());
-
-        while (true) {
-          String reduced = reduceOne(current, pattern);
-          if (reduced.equals(current)) {
-            break;
-          }
-          current = reduced;
-          counts.put(invariant.name(), counts.get(invariant.name()) + 1);
-          changed = true;
-        }
+    while (true) {
+      int completionIndex = firstCompletionIndex(remainingTokens, lastTransitions);
+      if (completionIndex < 0) {
+        break;
       }
-    } while (changed);
 
-    return new CompositionAnalysis(Map.copyOf(counts), current);
+      int completedTransition = remainingTokens.get(completionIndex);
+      boolean reduced = false;
+      for (CompiledInvariant invariant : invariants) {
+        if (invariant.lastTransition() != completedTransition) {
+          continue;
+        }
+
+        List<Integer> reducedPrefix =
+            reducePrefixWithGreedyEndAnchoredMatch(
+                remainingTokens, completionIndex, invariant.sequence());
+        if (reducedPrefix == null) {
+          continue;
+        }
+
+        remainingTokens = reducedPrefix;
+        counts.put(invariant.name(), counts.get(invariant.name()) + 1);
+        reduced = true;
+        break;
+      }
+
+      if (!reduced) {
+        // The earliest potential completion token cannot close any configured invariant.
+        // Keep the unmatched prefix for diagnostics and drop that orphan completion.
+        remainingTokens.remove(completionIndex);
+        break;
+      }
+    }
+
+    return new CompositionAnalysis(Map.copyOf(counts), asTransitionStream(remainingTokens));
   }
 
   static Pattern regexFor(int[] sequence) {
@@ -181,6 +211,19 @@ public final class PetriLogValidator {
     return Pattern.compile(regex.toString());
   }
 
+  static Pattern endAnchoredRegexFor(int[] sequence) {
+    if (sequence == null || sequence.length == 0) {
+      throw new IllegalArgumentException("Transition sequence cannot be null or empty.");
+    }
+
+    StringBuilder regex = new StringBuilder("(?s)^(.*)\\bT").append(sequence[0]).append("\\b");
+    for (int i = 1; i < sequence.length; i++) {
+      regex.append("(.*)\\bT").append(sequence[i]).append("\\b");
+    }
+    regex.append("\\s*$");
+    return Pattern.compile(regex.toString());
+  }
+
   static boolean isComposedByTransitionInvariants(
       List<Integer> firedTransitions, List<TransitionInvariantConfig> transitionInvariants) {
     return analyzeComposition(firedTransitions, transitionInvariants).isValid();
@@ -191,32 +234,80 @@ public final class PetriLogValidator {
     return analyzeComposition(firedTransitions, transitionInvariants).remainingSequence();
   }
 
-  private static String reduceOne(String stream, Pattern pattern) {
-    Matcher matcher = pattern.matcher(stream);
-    if (!matcher.find()) {
-      return stream;
+  private static int firstCompletionIndex(List<Integer> tokens, Set<Integer> lastTransitions) {
+    for (int i = 0; i < tokens.size(); i++) {
+      if (lastTransitions.contains(tokens.get(i))) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private static List<Integer> reducePrefixWithGreedyEndAnchoredMatch(
+      List<Integer> tokens, int completionIndex, int[] sequence) {
+    int seqLen = sequence.length;
+    int[] positions = new int[seqLen];
+
+    int searchEnd = completionIndex;
+    for (int i = seqLen - 1; i >= 0; i--) {
+      int found = findLastIndexOf(tokens, sequence[i], searchEnd);
+      if (found < 0) {
+        return null;
+      }
+      positions[i] = found;
+      searchEnd = found - 1;
     }
 
-    StringBuilder interleavings = new StringBuilder();
-    for (int i = 1; i <= matcher.groupCount(); i++) {
-      interleavings.append(matcher.group(i)).append(' ');
+    if (positions[seqLen - 1] != completionIndex) {
+      return null;
     }
 
-    String reduced =
-        stream.substring(0, matcher.start()) + interleavings + stream.substring(matcher.end());
+    List<Integer> reduced = new ArrayList<>();
 
-    return normalizeTransitionStream(reduced);
+    int groupStart = 0;
+    for (int i = 0; i < seqLen; i++) {
+      int groupEnd = positions[i];
+      if (groupStart < groupEnd) {
+        reduced.addAll(tokens.subList(groupStart, groupEnd));
+      }
+      groupStart = positions[i] + 1;
+    }
+
+    if (completionIndex + 1 < tokens.size()) {
+      reduced.addAll(tokens.subList(completionIndex + 1, tokens.size()));
+    }
+
+    return reduced;
+  }
+
+  private static int findLastIndexOf(List<Integer> tokens, int value, int endInclusive) {
+    for (int i = endInclusive; i >= 0; i--) {
+      if (tokens.get(i) == value) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   private static String asTransitionStream(List<Integer> firedTransitions) {
-    return firedTransitions.stream().map(t -> "T" + t).reduce((a, b) -> a + " " + b).orElse("");
+    return asTransitionStream(firedTransitions, firedTransitions.size());
   }
 
-  private static String normalizeTransitionStream(String stream) {
-    return List.of(stream.trim().split("\\s+")).stream()
-        .filter(token -> !token.isBlank())
-        .reduce((a, b) -> a + " " + b)
-        .orElse("");
+  private static String asTransitionStream(List<Integer> firedTransitions, int limitExclusive) {
+    int limit = Math.min(limitExclusive, firedTransitions.size());
+    if (limit <= 0) {
+      return "";
+    }
+
+    StringBuilder stream = new StringBuilder(limit * 4);
+    for (int i = 0; i < limit; i++) {
+      if (i > 0) {
+        stream.append(' ');
+      }
+      stream.append('T').append(firedTransitions.get(i));
+    }
+
+    return stream.toString();
   }
 
   private static int parseTransitionId(String fireLine) {

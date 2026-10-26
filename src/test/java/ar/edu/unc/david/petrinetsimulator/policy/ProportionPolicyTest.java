@@ -41,6 +41,7 @@ class ProportionPolicyTest {
       int[] observed = new int[6];
       for (int i = 0; i < observed.length; i++) {
         observed[i] = policy.decide(new int[] {2, 3});
+        policy.onFired(observed[i]);
       }
 
       assertArrayEquals(new int[] {2, 3, 2, 3, 2, 3}, observed);
@@ -56,6 +57,7 @@ class ProportionPolicyTest {
       int[] observed = new int[8];
       for (int i = 0; i < observed.length; i++) {
         observed[i] = policy.decide(new int[] {10, 20});
+        policy.onFired(observed[i]);
       }
 
       assertArrayEquals(new int[] {10, 20, 20, 20, 10, 20, 20, 20}, observed);
@@ -73,6 +75,7 @@ class ProportionPolicyTest {
 
       for (int i = 0; i < 400; i++) {
         int chosen = policy.decide(new int[] {10, 20});
+        policy.onFired(chosen);
         if (chosen == 10) {
           count10++;
         } else if (chosen == 20) {
@@ -107,6 +110,34 @@ class ProportionPolicyTest {
           new ProportionPolicy(List.of(new PolicyGroupConfig(new int[] {2, 3}, new int[] {1, 1})));
 
       assertEquals(99, policy.decide(new int[] {99, 2, 3}));
+    }
+
+    @Test
+    @DisplayName("decide is idempotent when no firing is recorded")
+    void decideIsIdempotentWithoutOnFired() {
+      ProportionPolicy policy =
+          new ProportionPolicy(
+              List.of(new PolicyGroupConfig(new int[] {10, 20}, new int[] {1, 3})));
+
+      for (int i = 0; i < 10; i++) {
+        assertEquals(10, policy.decide(new int[] {10, 20}));
+      }
+    }
+
+    @Test
+    @DisplayName("onFired updates future decisions")
+    void onFiredUpdatesFutureDecisions() {
+      ProportionPolicy policy =
+          new ProportionPolicy(
+              List.of(new PolicyGroupConfig(new int[] {10, 20}, new int[] {1, 3})));
+
+      int first = policy.decide(new int[] {10, 20});
+      assertEquals(10, first);
+
+      policy.onFired(first);
+
+      int second = policy.decide(new int[] {10, 20});
+      assertEquals(20, second);
     }
   }
 }
