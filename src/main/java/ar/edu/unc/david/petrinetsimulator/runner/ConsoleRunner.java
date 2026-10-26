@@ -2,11 +2,13 @@ package ar.edu.unc.david.petrinetsimulator.runner;
 
 import ar.edu.unc.david.petrinetsimulator.config.ConfigLoader;
 import ar.edu.unc.david.petrinetsimulator.config.logic.LoggingConfig;
+import ar.edu.unc.david.petrinetsimulator.config.logic.PolicyConfig;
 import ar.edu.unc.david.petrinetsimulator.config.logic.SimulationConfig;
 import ar.edu.unc.david.petrinetsimulator.config.main.MainConfig;
 import ar.edu.unc.david.petrinetsimulator.config.main.NetworkEntry;
 import ar.edu.unc.david.petrinetsimulator.core.SimulatorEngine;
 import ar.edu.unc.david.petrinetsimulator.log.PetriLogger;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,19 +34,21 @@ public class ConsoleRunner {
 
     String configPath = net.logicPath();
 
-    SimulationConfig baseconfig = ConfigLoader.load(configPath, SimulationConfig.class);
-    String policyType =
-        baseconfig.policy() == null || baseconfig.policy().type() == null
+    SimulationConfig loadedConfig = ConfigLoader.load(configPath, SimulationConfig.class);
+    SimulationConfig baseConfig = withPolicyOverride(loadedConfig, options.policyPath());
+    String configuredPolicyType =
+        baseConfig.policy() == null || baseConfig.policy().type() == null
             ? "unknown"
-            : baseconfig.policy().type().toLowerCase(Locale.ROOT);
+            : baseConfig.policy().type().toLowerCase(Locale.ROOT);
+    String policyType = policyLabel(net.id(), configuredPolicyType, options.policyPath());
 
     int batchRuns = Math.max(1, options.batchRuns());
     boolean batchMode = batchRuns > 1;
     List<RunStatistics> allRunStats = new ArrayList<>();
 
     for (int runIndex = 1; runIndex <= batchRuns; runIndex++) {
-      String logFile = resolveRunLogFile(baseconfig, net.id(), policyType, runIndex, batchMode);
-      SimulationConfig runConfig = withLogFile(baseconfig, logFile);
+      String logFile = resolveRunLogFile(baseConfig, net.id(), policyType, runIndex, batchMode);
+      SimulationConfig runConfig = withLogFile(baseConfig, logFile);
 
       runOne(runConfig, batchMode);
 
@@ -64,7 +68,7 @@ public class ConsoleRunner {
       RunStatisticsCsvWriter.writeBatchRuns(
           runsDir.resolve(prefix + "_runs.csv"),
           allRunStats,
-          baseconfig.net().transitions().size());
+          baseConfig.net().transitions().size());
       RunStatisticsCsvWriter.writeBatchAggregate(
           runsDir.resolve(prefix + "_batch_summary.csv"), allRunStats);
     }
@@ -89,31 +93,91 @@ public class ConsoleRunner {
   }
 
   private static String resolveRunLogFile(
-      SimulationConfig baseconfig,
+      SimulationConfig baseConfig,
       String networkId,
       String policyType,
       int runIndex,
       boolean batchMode) {
     if (!batchMode) {
-      return SimulatorEngine.resolveLogFile(baseconfig.logging());
+      return SimulatorEngine.resolveLogFile(baseConfig.logging());
     }
 
     return String.format(Locale.ROOT, "runs/%s_%s_run%03d.csv", networkId, policyType, runIndex);
   }
 
-  private static SimulationConfig withLogFile(SimulationConfig baseconfig, String logFile) {
-    boolean logWaitWake = baseconfig.logging() != null && baseconfig.logging().logWaitWake();
+  private static SimulationConfig withLogFile(SimulationConfig baseConfig, String logFile) {
+    boolean logWaitWake = baseConfig.logging() != null && baseConfig.logging().logWaitWake();
     LoggingConfig logging = new LoggingConfig(logFile, logWaitWake);
 
     return new SimulationConfig(
-        baseconfig.net(),
-        baseconfig.placeInvariants(),
-        baseconfig.agents(),
+        baseConfig.net(),
+        baseConfig.placeInvariants(),
+        baseConfig.agents(),
         logging,
-        baseconfig.runtime(),
-        baseconfig.policy(),
-        baseconfig.stop(),
-        baseconfig.transitionInvariants());
+        baseConfig.runtime(),
+        baseConfig.policy(),
+        baseConfig.stop(),
+        baseConfig.transitionInvariants());
+  }
+
+  private static SimulationConfig withPolicyOverride(
+      SimulationConfig baseConfig, String policyPath) {
+    if (policyPath == null || policyPath.isBlank()) {
+      return baseConfig;
+    }
+
+    PolicyConfig override = ConfigLoader.load(resolvePolicyPath(policyPath), PolicyConfig.class);
+    return new SimulationConfig(
+        baseConfig.net(),
+        baseConfig.placeInvariants(),
+        baseConfig.agents(),
+        baseConfig.logging(),
+        baseConfig.runtime(),
+        override,
+        baseConfig.stop(),
+        baseConfig.transitionInvariants());
+  }
+
+  private static String resolvePolicyPath(String policyPath) {
+    Path direct = Path.of(policyPath);
+    if (Files.exists(direct)) {
+      return direct.toString();
+    }
+
+    Path underPolicies = Path.of("src", "main", "resources", "policies", policyPath);
+    if (Files.exists(underPolicies)) {
+      return underPolicies.toString();
+    }
+
+    if (!policyPath.toLowerCase(Locale.ROOT).endsWith(".json")) {
+      Path underPoliciesJson =
+          Path.of("src", "main", "resources", "policies", policyPath + ".json");
+      if (Files.exists(underPoliciesJson)) {
+        return underPoliciesJson.toString();
+      }
+    }
+
+    return policyPath;
+  }
+
+  static String policyLabel(String networkId, String policyType, String policyPath) {
+    if (policyPath == null || policyPath.isBlank()) {
+      return policyType.toLowerCase(Locale.ROOT);
+    }
+
+    String normalized = policyPath.replace("\\", "/");
+    String fileName = normalized.substring(normalized.lastIndexOf("/") + 1);
+    String withoutExtension =
+        fileName.toLowerCase(Locale.ROOT).endsWith(".json")
+            ? fileName.substring(0, fileName.length() - 5)
+            : fileName;
+
+    String networkPrefix = networkId + "_";
+    if (withoutExtension.startsWith(networkPrefix)) {
+      return withoutExtension.substring(networkPrefix.length());
+    }
+
+    return withoutExtension;
   }
 
   private static String stripCsvExtension(String filename) {
@@ -122,10 +186,11 @@ public class ConsoleRunner {
         : filename;
   }
 
-  private record CliOptions(int batchRuns, String networkId) {
+  private record CliOptions(int batchRuns, String networkId, String policyPath) {
     private static CliOptions parse(String[] args) {
       int batchRuns = 1;
       String networkId = null;
+      String policyPath = null;
 
       for (int i = 0; i < args.length; i++) {
         String arg = args[i];
@@ -136,9 +201,14 @@ public class ConsoleRunner {
 
         if ("--network".equals(arg) && i + 1 < args.length) {
           networkId = args[++i];
+          continue;
+        }
+
+        if ("--policy".equals(arg) && i + 1 < args.length) {
+          policyPath = args[++i];
         }
       }
-      return new CliOptions(batchRuns, networkId);
+      return new CliOptions(batchRuns, networkId, policyPath);
     }
   }
 }

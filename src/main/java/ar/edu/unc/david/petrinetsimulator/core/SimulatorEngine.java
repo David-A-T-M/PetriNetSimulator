@@ -25,6 +25,7 @@ public class SimulatorEngine {
   public record Components(
       PetriNet net,
       Monitor monitor,
+      StopCondition stopCondition,
       List<AgentConfig> agents,
       RuntimeConfig runtime,
       String logFile) {}
@@ -51,10 +52,10 @@ public class SimulatorEngine {
     long[] beta = buildBetaArray(net, matrix.numTransitions());
     PetriNet petriNet = new PetriNet(net.initialMarking(), matrix, alpha, beta);
 
-    StopCondition stopCondition =
-        config.stop() == null
-            ? null
-            : new StopCondition(config.stop().transition(), config.stop().count());
+    StopCondition stopCondition = null;
+    if (config.stop() != null) {
+      stopCondition = stopCondition(config);
+    }
     boolean checkPlaceInvariants =
         config.runtime() == null || Boolean.TRUE.equals(config.runtime().checkPlaceInvariants());
     Monitor monitor =
@@ -67,7 +68,12 @@ public class SimulatorEngine {
             checkPlaceInvariants);
 
     return new Components(
-        petriNet, monitor, config.agents(), config.runtime(), resolveLogFile(config.logging()));
+        petriNet,
+        monitor,
+        stopCondition,
+        config.agents(),
+        config.runtime(),
+        resolveLogFile(config.logging()));
   }
 
   /** Starts a thread for each agent based on the provided agent configurations and monitor. */
@@ -161,5 +167,12 @@ public class SimulatorEngine {
       beta[t.id()] = t.beta();
     }
     return beta;
+  }
+
+  private static StopCondition stopCondition(SimulationConfig config) {
+    Integer admission = config.stop().admission();
+    int admissionTransition = admission == null ? -1 : admission;
+    return new StopCondition(
+        config.stop().transition(), config.stop().count(), admissionTransition);
   }
 }

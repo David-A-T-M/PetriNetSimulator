@@ -1,0 +1,14 @@
+{
+  "type": "PROPORTION",
+  "groups":
+  [
+    {
+      "transitions": [2, 3],
+      "weights": [3, 1]
+    },
+    {
+      "transitions": [6, 7],
+      "weights": [4, 1]
+    }
+  ]
+}

@@ -114,7 +114,8 @@
   },
   "stop": {
     "transition": 11,
-    "count": 200
+    "count": 200,
+    "admission": 0
   },
   "transitionInvariants": [
     {

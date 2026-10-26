@@ -264,6 +264,17 @@ class ConfigRecordsTest {
         StopConfig config = new StopConfig(11, 200);
         assertEquals(11, config.transition());
         assertEquals(200, config.count());
+        assertNull(config.admission());
+      }
+
+      @Test
+      @DisplayName("accepts valid stop configuration with admission transition")
+      void acceptsValidStopConfigWithAdmission() {
+        StopConfig config = new StopConfig(11, 200, 0);
+
+        assertEquals(11, config.transition());
+        assertEquals(200, config.count());
+        assertEquals(0, config.admission());
       }
 
       @Test
@@ -276,6 +287,18 @@ class ConfigRecordsTest {
       @DisplayName("rejects zero count")
       void rejectsZeroCount() {
         assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 0));
+      }
+
+      @Test
+      @DisplayName("rejects negative admission transition")
+      void rejectsNegativeAdmissionTransition() {
+        assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 200, -2));
+      }
+
+      @Test
+      @DisplayName("rejects admission transition equal to stop transition")
+      void rejectsEqualAndStopTransition() {
+        assertThrows(IllegalArgumentException.class, () -> new StopConfig(11, 200, 11));
       }
     }
 

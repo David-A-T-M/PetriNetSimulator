@@ -55,7 +55,7 @@ public class Monitor implements MonitorInterface {
   }
 
   /**
-   * Initializes the Monitor with optional stop condition and place invariants to validate.
+   * Initializes the Monitor with an optional stop condition and place invariants to validate.
    *
    * @param placeInvariants place invariants defined for the active net
    * @param checkPlaceInvariants whether to validate place invariants after each fire
@@ -94,6 +94,10 @@ public class Monitor implements MonitorInterface {
           return false;
         }
 
+        if (stopCondition != null && stopCondition.rejects(transition)) {
+          return false;
+        }
+
         while (!finished && !petriNet.isEnabled(transition)) {
           if (petriNet.isExpired(transition)) {
             return false;
@@ -106,7 +110,7 @@ public class Monitor implements MonitorInterface {
           condVar[transition].await();
           queues.remove(transition, current);
 
-          if (finished) {
+          if (finished || (stopCondition != null && stopCondition.rejects(transition))) {
             return false;
           }
         }
@@ -138,7 +142,7 @@ public class Monitor implements MonitorInterface {
             condVar[transition].await();
             queues.remove(transition, current);
 
-            if (finished) {
+            if (finished || (stopCondition != null && stopCondition.rejects(transition))) {
               return false;
             }
 
@@ -156,6 +160,10 @@ public class Monitor implements MonitorInterface {
             finished = true;
             signalAllWaitingThreads();
             return false;
+          }
+
+          if (stopCondition != null && stopCondition.rejects(transition)) {
+            condVar[transition].signalAll();
           }
 
           wakeEligible();
