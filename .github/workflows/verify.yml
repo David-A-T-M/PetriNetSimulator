@@ -29,4 +29,26 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Check (Linter + Formatter + Tests)
-        run: ./gradlew check
+        run: ./gradlew check --no-daemon --stacktrace --info
+
+      - name: Print test failure summary
+        if: failure()
+        run: |
+          echo "=== JUnit XML failures (if any) ==="
+          if [ -d build/test-results/test ]; then
+            grep -R --line-number "<failure\|<error" build/test-results/test || true
+          else
+            echo "No test results directory found."
+          fi
+
+      - name: Upload test and report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-check-artifacts
+          path: |
+            build/test-results/**
+            build/reports/tests/**
+            build/reports/checkstyle/**
+            build/reports/spotless/**
+          if-no-files-found: warn
